@@ -24,6 +24,8 @@ class adapter extends uvm_reg_adapter;
 
    virtual function uvm_sequence_item reg2bus (const ref uvm_reg_bus_op rw);
       // bus_pkt pkt = bus_pkt::type_id::create("pkt"); //todo what is the bus pkt?? where has this been declared?   => to diko mou sequence item allaxeto!!
+      // apb_transaction pkt;
+      // pkt = apb_transaction::type_id::create("pkt"); 
 
       apb_transaction pkt = apb_transaction::type_id::create("pkt"); 
 
@@ -44,9 +46,11 @@ class adapter extends uvm_reg_adapter;
 
       rw.kind = pkt.write ? UVM_WRITE : UVM_READ;
       rw.addr = pkt.addr;
-      rw.data =pkt.data;
+      rw.data = pkt.data;
       rw.status = UVM_IS_OK; //APB does not support slave response
-      `uvm_info ("adapter", $sformatf("bus2reg : addr=0x%0h data=0x%oh kind=%s status=%s", rw.addr, rw.data, rw.kind.name(), rw.status.name()), UVM_DEBUG)
+      `uvm_info ("adapter", $sformatf("bus2reg : pkt.write=%0h ", pkt.write), UVM_NONE)
+
+      `uvm_info ("adapter", $sformatf("bus2reg : addr=0x%0h data=0x%0h kind=%s status=%s", rw.addr, rw.data, rw.kind.name(), rw.status.name()), UVM_NONE)
 
    endfunction
 

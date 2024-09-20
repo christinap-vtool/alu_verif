@@ -22,6 +22,13 @@ package alu_pkg;
    //`include "fifo_sequence.sv"
    `include "fifo_virtual_sequencer.sv"
    `include "apb_virtual_seq_lib.sv"
+   //`include "apb_cntrl_seq.sv"
+   //`include "apb_seq_random.sv"
+   `include "alu_fifo_out_empty_seq.sv"
+
+
+
+   
    `include "alu_scoreboard.sv"
    `include "alu_env.sv"
 
