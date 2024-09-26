@@ -38,7 +38,7 @@ class alu_env extends uvm_env;
       m_ral_model.reg_map.set_base_addr(0); 
 
       //fifo_vr_sqr.write_seqr = agent.sequencer;  //todo it doesn't work. the write way o set the sequencer is through the reg_map
-      //only with the above line doesn't work. but don't we need this line?
+      //only with the above line doesn't work
 
       //connect analysis ports from agent to the .scoreboard
 

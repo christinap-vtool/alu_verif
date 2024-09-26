@@ -1,7 +1,7 @@
 class alu_monitor extends uvm_monitor;
    `uvm_component_utils(alu_monitor)
    virtual interfc vintf;
-   apb_transaction  tr_item;    //todo i'm not sure if we need this 
+   apb_transaction  tr_item;
    fifo_config fifo_conf; 
    bit rw;
 
@@ -48,11 +48,7 @@ class alu_monitor extends uvm_monitor;
    endtask
 
    task wr_rd_task();
-      // if(vintf.ready == 0) begin
-      //    `uvm_info(get_name(), "inside vintf.ready if", UVM_NONE)
-      //    @(posedge vintf.ready );
-      //    `uvm_info("DRIVER", $sformatf("vintf.ready:%0d ",vintf.ready), UVM_NONE);
-      // end
+
       forever 
       begin
          wait (vintf.psel==1 && vintf.penable==1 && vintf.ready ==1);
@@ -69,7 +65,7 @@ class alu_monitor extends uvm_monitor;
          tr_item.addr = vintf.paddr;
          tr_item.slv_err = vintf.slv_err;
          `uvm_info("MONITOR", $sformatf("DATA READ WRITE addr:%0d data:%0d slverr:%0d",tr_item.addr ,tr_item.data,tr_item.slv_err), UVM_NONE); 
-         @(posedge vintf.clk);
+         wait (vintf.penable == 0 && vintf.psel ==0);
 
          ap_monitor.write (tr_item);
 

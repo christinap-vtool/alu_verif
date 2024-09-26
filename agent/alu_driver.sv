@@ -28,33 +28,31 @@ class alu_driver extends uvm_driver #(apb_transaction);
    task run_phase(uvm_phase phase);
       #1ns;
       //reset
-      // if(vintf.rst_n == 1) begin
-      //     @(negedge vintf.rst_n);
-      // end
-      // @(posedge vintf.rst_n);
-      //     `uvm_info(get_name(), "got through RESET", UVM_NONE) 
+      if(vintf.rst_n == 0) begin
+         @(posedge vintf.rst_n);
+         `uvm_info(get_name(), "out of RESET", UVM_NONE)
 
-      // if(vintf.rst_n == 0) begin
-      //     @(negedge vintf.rst_n);
-      // end
-      // @(posedge vintf.rst_n);
-      //     `uvm_info(get_name(), "got through RESET", UVM_NONE)
+      end
+      @(negedge vintf.rst_n);
+      `uvm_info(get_name(), "got through RESET", UVM_NONE)
+
+
 
 
       init_signals();
-      `uvm_info(get_name(), "patates2", UVM_NONE)
+      `uvm_info(get_name(), "after the initialization of the signals", UVM_NONE)
       forever begin
          seq_item_port.get_next_item (data_obj);
          `uvm_info("DRIVER", $sformatf("data_obj.op:%0d ",data_obj.op), UVM_NONE)
          if( data_obj.write == 1) begin
             //if( rw == 1) begin
-            `uvm_info(get_name(), "patates3a", UVM_NONE)
+            `uvm_info(get_name(), "write_data will be called", UVM_NONE)
             write_data();
-            `uvm_info(get_name(), "patates3", UVM_NONE)
+            `uvm_info(get_name(), "after the write task has been called", UVM_NONE)
          end else begin
-            `uvm_info(get_name(), "hey i'm before read task", UVM_NONE)
+            `uvm_info(get_name(), "before read task", UVM_NONE)
             read_data();
-            `uvm_info(get_name(), "hey i'm after read task", UVM_NONE)
+            `uvm_info(get_name(), "after read task", UVM_NONE)
          end
          seq_item_port.item_done(data_obj);
       end
@@ -63,8 +61,8 @@ class alu_driver extends uvm_driver #(apb_transaction);
    task init_signals();
       `uvm_info(get_name(), "hello i'm inside init_signal task", UVM_NONE)
       // if( data_obj.op == write) begin
-      //if( rw == 1)begin
-      `uvm_info(get_name(), "initialiazation of signals.  Let's start", UVM_NONE)
+
+      `uvm_info(get_name(), "initialiazation of signals. Let's start", UVM_NONE)
       vintf.rst_n <= 0;
       vintf.paddr <= 0;
       vintf.pwdata <= 0;
@@ -131,7 +129,7 @@ class alu_driver extends uvm_driver #(apb_transaction);
       // end
 
       `uvm_info(get_name(), "read  task after vintf.ready", UVM_NONE) 
-      vintf.psel=0;   //auto
+      vintf.psel=0;
       vintf.penable <= 0;
       `uvm_info("DRIVER", $sformatf("vintf.prdata: %0h ",vintf.prdata), UVM_NONE)
       data_obj.data = vintf.prdata;

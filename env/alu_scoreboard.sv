@@ -1,6 +1,6 @@
 //  `uvm_analysis_imp_decl(_fifo_write)
 //todo `uvm_analysis_imp_decl(_fifo_read)
-//onomapkg::fifo_in_depth
+
 class alu_scoreboard extends uvm_scoreboard;
    `uvm_component_utils (alu_scoreboard)  
    parameter DATA_SIZE = 16;           //todo maybe should be found only in the defines
@@ -52,15 +52,18 @@ class alu_scoreboard extends uvm_scoreboard;
       `uvm_info("write", $sformatf("data received = 0x%0h", pkt.data), UVM_NONE)
       `uvm_info("write", $sformatf("address received = 0x%0h", pkt.addr), UVM_NONE)
 
+      `uvm_info("write", $sformatf("write operation= 0x%0h", pkt.op), UVM_NONE)
+      //`uvm_info("write", $sformatf("kind received = 0x%0h", pkt.kind), UVM_NONE)
+
 
       if(pkt.slv_err == 1) begin
-         if((pkt.addr == 0 || pkt.addr == 1 || pkt.addr == 2) && (pkt.write== 0 )) begin
+         if(((pkt.addr == 0) || (pkt.addr == 1) || (pkt.addr == 2)) && (pkt.op== 0 )) begin
             `uvm_info("SCBD", $sformatf("the master tries to read from a write only register"), UVM_NONE)
          end
-         else if((pkt.addr == 3 || pkt.addr ==4) && (pkt.write== 1)) begin
+         else if(((pkt.addr == 3)||(pkt.addr == 4)) && (pkt.op == 1)) begin
             `uvm_info("SCBD", $sformatf("the master tries to write in a read only register"), UVM_NONE)
          end
-         else if(pkt.addr >4) begin
+         else if(pkt.addr > 4) begin
             `uvm_info("SCBD", $sformatf("The address provided by the master is bigger than 4"), UVM_NONE)
          end
          else if((pkt.addr == 3) && (cnt_fifo_out == 0)) begin 
@@ -69,10 +72,14 @@ class alu_scoreboard extends uvm_scoreboard;
          else if((pkt.addr == 0) && (cnt_fifo_in > FIFO_IN_DEPTH)) begin 
             `uvm_info("SCBD", $sformatf("The master tries to send new data to be computed, but FIFO_IN is full."), UVM_NONE)
          end
+         //todo add the last bullet beacause of the slv_err is 1: The operation bits of ctrl_data are neither 2?b10 nor 2?b01.
+         // else if ((pkt.op!=0) || (pkt.op!=1)) begin
+         //    `uvm_info("SCBD", $sformatf("The operation bits of ctrl_data are neither 2?b10 nor 2?b01."), UVM_NONE)
+         // end
+
          else 
             `uvm_error(get_type_name (), $sformatf("No idea from where sl_err is coming from."))
          
-         //todo add the last bullet beacause of the slv_err is 1: The operation bits of ctrl_data are neither 2?b10 nor 2?b01.
 
       end
       else begin
@@ -84,7 +91,6 @@ class alu_scoreboard extends uvm_scoreboard;
                data_to_be_written[9:2] = control[15:8];
                start_bit = control[0];
                `uvm_info("SCBD", $sformatf("id = 0x%0h", data_to_be_written[9:2]), UVM_NONE)
-
             end
             2'b01 : begin
                data_to_be_written[25:10] = pkt.data;
@@ -117,7 +123,8 @@ class alu_scoreboard extends uvm_scoreboard;
                   actual_result[24:17] = data_to_be_written[9:2];
                   actual_result[16:0] = result;
                   `uvm_info("SCBD", $sformatf(" HERE HERE HERE actual result of addition = :%0h ",actual_result), UVM_NONE); 
-
+                  
+                  m_ral_model.m_result_reg.predict(actual_result);
                   item_q.push_back(actual_result);  //FIFO_OUT
 
                end
@@ -126,20 +133,23 @@ class alu_scoreboard extends uvm_scoreboard;
                   //That might be obvious for the addition of two DATA_SIZE numbers, but multiplying them would produce a result of (2*DATA_SIZE). 
                   //In order to avoid that and for the purpose of simplifying FIFO_OUT, the two operands of a multiplication are divided in half 
                   //and only the (DATA_SIZE/2) least significant bits are used in the multiplier.
-                  `uvm_info("SCBD", $sformatf("multiplication = :%0d ",operation), UVM_NONE); 
+                  `uvm_info("SCBD", $sformatf("multiplication = :%0h ",operation), UVM_NONE); 
 
                   first_operand_mul = first_operand[7:0]; //magic numver
-                  `uvm_info("SCBD", $sformatf("first_operand_mul = :%0d ",first_operand_mul), UVM_NONE); 
+                  `uvm_info("SCBD", $sformatf("first_operand_mul = :%0h ",first_operand_mul), UVM_NONE); 
 
                   second_operand_mul = second_operand[7:0]; //magic numbers
-                  `uvm_info("SCBD", $sformatf("second_operand_mul = :%0d ",second_operand_mul), UVM_NONE); 
+                  `uvm_info("SCBD", $sformatf("second_operand_mul = :%0h ",second_operand_mul), UVM_NONE); 
 
                   result = first_operand_mul * second_operand_mul;
 
-                  `uvm_info("SCBD", $sformatf("result of multiplication = :%0d ",result), UVM_NONE); 
+                  `uvm_info("SCBD", $sformatf("result of multiplication = :%0h ",result), UVM_NONE); 
                   actual_result[24:17] = data_to_be_written[9:2];
                   actual_result[16:0] = result;
-                  `uvm_info("SCBD", $sformatf("actual result of multiplication = :%0d ",actual_result), UVM_NONE); 
+                  `uvm_info("SCBD", $sformatf("actual result of multiplication = :%0h ",actual_result), UVM_NONE); 
+                  
+                  //m_ral_model.m_result_reg.predict(actual_result);
+               
                   m_ral_model.m_result_reg.predict(actual_result);
 
                   item_q.push_back(actual_result);
@@ -149,6 +159,8 @@ class alu_scoreboard extends uvm_scoreboard;
 
                end
                2'b11: begin
+                 
+
                   value=item_q.pop_front();
                   cnt_fifo_out = cnt_fifo_out - 1;
                   `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
@@ -180,3 +192,6 @@ class alu_scoreboard extends uvm_scoreboard;
 
 endclass
 
+
+
+//seed : 1989228659
