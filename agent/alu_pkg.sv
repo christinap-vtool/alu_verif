@@ -25,7 +25,7 @@ package alu_pkg;
    //`include "apb_cntrl_seq.sv"
    //`include "apb_seq_random.sv"
    `include "alu_fifo_out_empty_seq.sv"
-   //`include "alu_fifo_in_full_seq.sv"
+   `include "alu_fifo_in_full_seq.sv"
 
 
    

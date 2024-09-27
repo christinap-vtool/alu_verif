@@ -26,7 +26,8 @@ class alu_scoreboard extends uvm_scoreboard;
    reg_block   m_ral_model; //register model
    int cnt_fifo_in = 0;
    int cnt_fifo_out = 0;
-
+   bit[24:0] monitor_full_out;
+   bit [24:0]actuall_full_out;  //When CNT_FIFO_OUT reaches its maximum value, this variable is set to 1.
 
    function new (string name = "alu_scoreboard", uvm_component parent);
       super.new(name,parent);
@@ -57,6 +58,8 @@ class alu_scoreboard extends uvm_scoreboard;
 
 
       if(pkt.slv_err == 1) begin
+         `uvm_info("SCBD", $sformatf("Cause of slave error:"), UVM_NONE)
+
          if(((pkt.addr == 0) || (pkt.addr == 1) || (pkt.addr == 2)) && (pkt.op== 0 )) begin
             `uvm_info("SCBD", $sformatf("the master tries to read from a write only register"), UVM_NONE)
          end
@@ -79,7 +82,6 @@ class alu_scoreboard extends uvm_scoreboard;
 
          else 
             `uvm_error(get_type_name (), $sformatf("No idea from where sl_err is coming from."))
-         
 
       end
       else begin
@@ -91,6 +93,10 @@ class alu_scoreboard extends uvm_scoreboard;
                data_to_be_written[9:2] = control[15:8];
                start_bit = control[0];
                `uvm_info("SCBD", $sformatf("id = 0x%0h", data_to_be_written[9:2]), UVM_NONE)
+
+               cnt_fifo_in = cnt_fifo_in + 1;
+               cnt_fifo_out = cnt_fifo_out + 1;
+               `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
             end
             2'b01 : begin
                data_to_be_written[25:10] = pkt.data;
@@ -98,10 +104,25 @@ class alu_scoreboard extends uvm_scoreboard;
             2'b10: begin
                data_to_be_written[41:26] = pkt.data;
             end
+            2'b11: begin
+               value=item_q.pop_front();
+               cnt_fifo_in = cnt_fifo_in - 1;
+               cnt_fifo_out = cnt_fifo_out - 1;
+               `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
+            end
+            2'b100: begin
+              monitor_full_out = pkt.data;
+               `uvm_info("SCBD", $sformatf("monitor_full_out = %0d ",monitor_full_out), UVM_NONE);
+            end
+
+
          endcase
 
          //lets make the expected pkt!//todo create a cntr for fifo in
+         
          if(start_bit) begin
+
+            //cnt_fifo_in = cnt_fifo_in + 1;
             `uvm_info("SCBD", $sformatf("cnt_fifo_in = :%0h ",cnt_fifo_in), UVM_NONE); 
 
             operation = data_to_be_written[1:0];
@@ -112,6 +133,10 @@ class alu_scoreboard extends uvm_scoreboard;
 
             second_operand = data_to_be_written[41:26];
             `uvm_info("SCBD", $sformatf("second_operand = :%0h ",second_operand), UVM_NONE);
+
+            //The start bit register is self clearing and
+            //must return to zero as soon as the data is written in FIFO_IN.
+            start_bit = 0;
 
             case(operation)
                2'b01 : begin
@@ -126,6 +151,15 @@ class alu_scoreboard extends uvm_scoreboard;
                   
                   m_ral_model.m_result_reg.predict(actual_result);
                   item_q.push_back(actual_result);  //FIFO_OUT
+                  cnt_fifo_out = cnt_fifo_out + 1;
+               `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
+
+                  if (cnt_fifo_out == FIFO_OUT_DEPTH) begin 
+                     monitor_full_out = 1;
+                  end
+                  m_ral_model.m_monitor_reg.predict(monitor_full_out);
+
+
 
                end
                2'b10: begin
@@ -147,26 +181,20 @@ class alu_scoreboard extends uvm_scoreboard;
                   actual_result[24:17] = data_to_be_written[9:2];
                   actual_result[16:0] = result;
                   `uvm_info("SCBD", $sformatf("actual result of multiplication = :%0h ",actual_result), UVM_NONE); 
-                  
-                  //m_ral_model.m_result_reg.predict(actual_result);
+
                
                   m_ral_model.m_result_reg.predict(actual_result);
 
                   item_q.push_back(actual_result);
-                  cnt_fifo_out = cnt_fifo_out + 1;
-                  //m_ral_model.m_result_reg.predict(actual_result);
-
-
-               end
-               2'b11: begin
-                 
-
-                  value=item_q.pop_front();
-                  cnt_fifo_out = cnt_fifo_out - 1;
-                  `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
-
+                  
+                  //cnt_fifo_out = cnt_fifo_out + 1;
+                  if (cnt_fifo_out == FIFO_OUT_DEPTH) begin 
+                     monitor_full_out = 1;
+                  end
+                  m_ral_model.m_monitor_reg.predict(monitor_full_out);
 
                end
+
             endcase
          end
       end //else no slave error
