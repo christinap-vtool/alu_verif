@@ -45,7 +45,7 @@ class apb_seq extends base_seq;
    constraint operation_c {operation inside{1,2};}
    //constraint operation_c {operation == 2;}
 
-   constraint start_bit_c {start_bit == 1;}
+   //constraint start_bit_c {start_bit == 1;}
 
     //constraint data0_c {data0 == 255;}
     //constraint data1_c {data1 == 255;}
@@ -69,7 +69,7 @@ class apb_seq extends base_seq;
          randomize(data1);
          randomize(id);
          randomize(operation);
-         //randomize(start_bit);
+         randomize(start_bit);
          data_obj = apb_transaction :: type_id ::create("dtata_obj");
 
          data_obj.op = write;

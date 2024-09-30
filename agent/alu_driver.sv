@@ -116,17 +116,22 @@ class alu_driver extends uvm_driver #(apb_transaction);
       `uvm_info(get_name(), "read task after vintf.clk", UVM_NONE)
       `uvm_info("DRIVER", $sformatf("vintf.ready:%0d ",vintf.ready), UVM_NONE)
 
-       @(posedge vintf.clk);
-       @(posedge vintf.clk);    //wait state
+      //  @(posedge vintf.clk);
+      //  @(posedge vintf.clk);    //wait state
        if (vintf.ready == 0) begin
-         `uvm_info(get_name(), "inside vintf.ready if", UVM_NONE) 
-         @(posedge vintf.ready ); //auto
+         `uvm_info(get_name(), "inside vintf.ready if", UVM_NONE)
+
+         // while(vintf.ready == 0) begin
+         //    @(posedge  vintf.clk);
+         //    `uvm_info(get_name(), "waiting for ready", UVM_NONE)
+         // end
+
+         @(negedge vintf.ready ); //auto
          `uvm_info("DRIVER", $sformatf("vintf.ready:%0d ",vintf.ready), UVM_NONE)
       end
-      // else begin
-      //    @(posedge vintf.clk);
-         
-      // end
+      else begin
+         @(posedge vintf.clk);
+      end
 
       `uvm_info(get_name(), "read  task after vintf.ready", UVM_NONE) 
       vintf.psel=0;
@@ -135,7 +140,6 @@ class alu_driver extends uvm_driver #(apb_transaction);
       data_obj.data = vintf.prdata;
       data_obj.slv_err = vintf.slv_err;
 
-      
 
    endtask
 

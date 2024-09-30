@@ -72,7 +72,9 @@ class alu_scoreboard extends uvm_scoreboard;
          else if((pkt.addr == 3) && (cnt_fifo_out == 0)) begin 
             `uvm_info("SCBD", $sformatf("The master tries to read a result from the Result register, but FIFO_OUT is empty."), UVM_NONE)
          end
-         else if((pkt.addr == 0) && (cnt_fifo_in > FIFO_IN_DEPTH)) begin 
+         //else if((pkt.addr == 0) && (cnt_fifo_in > FIFO_IN_DEPTH)) begin 
+         else if( (cnt_fifo_in > FIFO_IN_DEPTH)) begin 
+
             `uvm_info("SCBD", $sformatf("The master tries to send new data to be computed, but FIFO_IN is full."), UVM_NONE)
          end
          //todo add the last bullet beacause of the slv_err is 1: The operation bits of ctrl_data are neither 2?b10 nor 2?b01.
@@ -93,9 +95,11 @@ class alu_scoreboard extends uvm_scoreboard;
                data_to_be_written[9:2] = control[15:8];
                start_bit = control[0];
                `uvm_info("SCBD", $sformatf("id = 0x%0h", data_to_be_written[9:2]), UVM_NONE)
+               if(control[0] ==1) begin
+                  cnt_fifo_in = cnt_fifo_in + 1;
+                  cnt_fifo_out = cnt_fifo_out + 1;
+               end
 
-               cnt_fifo_in = cnt_fifo_in + 1;
-               cnt_fifo_out = cnt_fifo_out + 1;
                `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
             end
             2'b01 : begin
@@ -118,7 +122,7 @@ class alu_scoreboard extends uvm_scoreboard;
 
          endcase
 
-         //lets make the expected pkt!//todo create a cntr for fifo in
+         //lets make the expected pkt!
          
          if(start_bit) begin
 
@@ -151,7 +155,7 @@ class alu_scoreboard extends uvm_scoreboard;
                   
                   m_ral_model.m_result_reg.predict(actual_result);
                   item_q.push_back(actual_result);  //FIFO_OUT
-                  cnt_fifo_out = cnt_fifo_out + 1;
+                  //cnt_fifo_out = cnt_fifo_out + 1;
                `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
 
                   if (cnt_fifo_out == FIFO_OUT_DEPTH) begin 
