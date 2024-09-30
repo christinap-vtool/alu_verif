@@ -22,7 +22,7 @@ class alu_agent extends uvm_agent;
       if(!uvm_config_db#(fifo_config) :: get(this,"","fifo_config", conf))
          `uvm_error(get_type_name(), "Unable to get top_config")
 
-      //  uvm_config_db#(fifo_config) :: set (this,"","fifo_config",conf);    //todo not sure if this is needed
+      //  uvm_config_db#(fifo_config) :: set (this,"","fifo_config",conf);
 
       //if (conf.is_active == UVM_ACTIVE) begin
       if (get_is_active() == UVM_ACTIVE) begin
@@ -50,7 +50,3 @@ class alu_agent extends uvm_agent;
    //do we need run_phase??
 
 endclass
-
-
-
-//ral 

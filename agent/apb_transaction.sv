@@ -3,8 +3,6 @@
 class apb_transaction extends uvm_sequence_item;
    `uvm_object_utils(apb_transaction)
 
-   parameter DATA_WIDTH = 16;
-   parameter MUL_DATA_SIZE = 8;
 
    rand wr_rd_type              op; //indicates whether the transfer is read or write
    rand logic                   write;

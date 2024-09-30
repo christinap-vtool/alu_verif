@@ -24,18 +24,9 @@ package alu_pkg;
    `include "apb_virtual_seq_lib.sv"
    //`include "apb_cntrl_seq.sv"
    //`include "apb_seq_random.sv"
-   `include "alu_fifo_in_full_seq.sv"
+   //`include "alu_fifo_in_full_seq.sv"
 
 
-   
-
-
-
-   
-
-
-
-   
    `include "alu_scoreboard.sv"
    `include "alu_env.sv"
 
