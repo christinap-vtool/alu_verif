@@ -14,6 +14,7 @@ class alu_empty_fifo_out_test extends alu_testbase;
    function void build_phase(uvm_phase phase);
       super.build_phase(phase);
       seq = alu_fifo_out_empty_seq::type_id::create("seq");
+
    endfunction
 
    task run_phase(uvm_phase phase);
