@@ -7,6 +7,7 @@ class alu_base_test extends alu_testbase;
    apb_seq seq;
 
 
+
    //alu_env env;
    reg_block   m_ral_model; //register model
 
@@ -14,6 +15,8 @@ class alu_base_test extends alu_testbase;
       super.build_phase(phase); 
 
       seq = apb_seq::type_id::create("seq");
+
+
    endfunction
 
    task run_phase(uvm_phase phase);

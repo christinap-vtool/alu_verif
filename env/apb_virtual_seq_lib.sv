@@ -43,7 +43,7 @@ class apb_seq extends base_seq;
 
    constraint id_c {id >0;}
    constraint operation_c {operation inside{1,2};}
-   //constraint operation_c {operation == 2;}
+   //constraint operation_c {operation == 4;}
 
    //constraint start_bit_c {start_bit == 1;}
 
@@ -96,7 +96,7 @@ class apb_seq extends base_seq;
          control[0] = start_bit;
          control[2:1] = operation;
          control[15:8] =id;
-         `uvm_info("seq", $sformatf("istart bit:%0h ",start_bit), UVM_NONE)
+         `uvm_info("seq", $sformatf("start bit:%0h ",start_bit), UVM_NONE)
          `uvm_info("seq", $sformatf("operation:%0h ",operation), UVM_NONE)
          `uvm_info("seq", $sformatf(" id:%0h ",id), UVM_NONE)
          `uvm_info("seq", $sformatf("initialization of control register:%0h ",control), UVM_NONE)
@@ -104,7 +104,7 @@ class apb_seq extends base_seq;
          #600ns;
          m_ral_model.m_control_reg.write(status,control);
 
-         #600ns;
+         #800ns;
 
          m_ral_model.m_result_reg.read(status,rdata);
          `uvm_info("seq", $sformatf("result bit:%0h ",rdata), UVM_NONE)
@@ -281,6 +281,8 @@ class alu_fifo_in_full_seq extends base_seq;
    bit[24:0]  rdata;   //here will be saved the data that will be read from data0
 
    rand int wr_trans;
+   rand int rd_trans;
+
 
    constraint id_c {id >0;}
    constraint operation_c {operation inside{1,2};}
@@ -288,10 +290,12 @@ class alu_fifo_in_full_seq extends base_seq;
 
    constraint start_bit_c {start_bit == 1;}
 
-    //constraint data0_c {data0 == 255;}
-    //constraint data1_c {data1 == 255;}
+    constraint data0_c {data0 inside {1,2,3,4,5};}
+    constraint data1_c {data1 inside {1,2,3,4,5};}
    //constraint id_c{id == 2;}
    constraint wr_trans_c{soft wr_trans>0; soft wr_trans<4;}
+   constraint rd_trans_c{soft rd_trans>0; soft rd_trans<4;}
+
 
    function new (string name = "write_read_seq");
       super.new(name);
@@ -349,8 +353,15 @@ class alu_fifo_in_full_seq extends base_seq;
       `uvm_info("seq", $sformatf("monitor bit:%0d ",rdata), UVM_NONE);
       `uvm_info(get_name(), " seq after monitor", UVM_NONE)
 
-      data_obj.print();
       end
+      repeat(rd_trans) begin
+         #1000ns;
+         `uvm_info("seq", $sformatf("result:%0d ",rdata), UVM_NONE);
+         m_ral_model.m_result_reg.read(status, rdata);
+      end
+
+      data_obj.print();
+
 
    endtask
 endclass

@@ -23,7 +23,7 @@ class alu_full_fifo_in_test extends alu_testbase;
       #10;
 
       //randomize(seq);
-      seq.randomize() with{wr_trans==20;};
+      seq.randomize() with{wr_trans==20; rd_trans==8;};
 
       seq.start(env.fifo_vr_sqr);
 

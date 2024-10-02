@@ -3,8 +3,8 @@
 
 
 class alu_scoreboard extends uvm_scoreboard;
-   `uvm_component_utils (alu_scoreboard)  
-   // parameter DATA_SIZE = 16;           //todo maybe should be found only in the defines
+   `uvm_component_utils (alu_scoreboard)
+   // parameter DATA_SIZE = 16;
    // parameter MUL_DATA_SIZE = 8;
    // parameter FIFO_IN_DEPTH =4;
    // parameter FIFO_OUT_DEPTH =4;
@@ -27,6 +27,8 @@ class alu_scoreboard extends uvm_scoreboard;
    int cnt_fifo_out = 0;
    bit[24:0] monitor_full_out;
    bit [24:0]actuall_full_out;  //When CNT_FIFO_OUT reaches its maximum value, this variable is set to 2.
+   bit flag_first_prediction;
+   bit flag_reading;
 
    function new (string name = "alu_scoreboard", uvm_component parent);
       super.new(name,parent);
@@ -38,6 +40,17 @@ class alu_scoreboard extends uvm_scoreboard;
    function void build_phase (uvm_phase phase);
       ap_imp = new("ap_imp", this);
    endfunction
+
+   task predict_task();
+      //`uvm_info("SCBD", $sformatf("is busy  = :%0h ",m_ral_model.m_result_reg.is_busy()), UVM_NONE); 
+
+      #100ns;
+      m_ral_model.m_result_reg.predict(value);
+      //`uvm_info("SCBD", $sformatf("is busy  = :%0h ",m_ral_model.m_result_reg.is_busy()), UVM_NONE); 
+
+      `uvm_info("SCBD", $sformatf("prediction from task  = :%0h ",value), UVM_NONE); 
+
+   endtask
 
    //define action to be taken when a pkt is received via the declared analysis port
    virtual function void write (apb_transaction pkt);
@@ -68,10 +81,10 @@ class alu_scoreboard extends uvm_scoreboard;
             `uvm_info("SCBD", $sformatf("The master tries to send new data to be computed, but FIFO_IN is full."), UVM_NONE)
          end
          //todo add the last bullet beacause of the slv_err is 1: The operation bits of ctrl_data are neither 2?b10 nor 2?b01.
-         else if ((pkt.op!=1) || (pkt.op!=2)) begin
-            `uvm_info("SCBD", $sformatf("The operation bits of ctrl_data are neither 2?b10 nor 2?b01."), UVM_NONE)
-         end
-
+         //else if ((pkt.addr == 0) && ((pkt.data[2:1]!=2) || (pkt.data[2:1]!=1))) begin
+         // else if ((pkt.op!=1) || (pkt.op!=2)) begin
+         //    `uvm_info("SCBD", $sformatf("The operation bits of ctrl_data are neither 2?b10 nor 2?b01."), UVM_NONE)
+         // end
          else
             `uvm_error(get_type_name (), $sformatf("No idea from where sl_err is coming from."))
       end //pkt.slv_err == 1)
@@ -88,8 +101,8 @@ class alu_scoreboard extends uvm_scoreboard;
                   cnt_fifo_in = cnt_fifo_in + 1;
                   cnt_fifo_out = cnt_fifo_out + 1;
                end
-
                `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
+
             end
             2'b01 : begin
                data_to_be_written[25:10] = pkt.data;
@@ -98,20 +111,41 @@ class alu_scoreboard extends uvm_scoreboard;
                data_to_be_written[41:26] = pkt.data;
             end
             2'b11: begin
+
+               `uvm_info("SCBD", $sformatf("flag_first_prediction = %0d ",flag_first_prediction), UVM_NONE);
                value=item_q.pop_front();
+               `uvm_info("SCBD", $sformatf("value = %0h ",value), UVM_NONE);
+               if((flag_first_prediction ==1) &&(cnt_fifo_out>1) ) begin
+                  fork
+                     predict_task();
+                  join_none
+               end
+               else begin
+                  `uvm_info("SCBD", $sformatf("flag_first_prediction = %0d ",flag_first_prediction), UVM_NONE);
+                  flag_first_prediction = 0;
+                  `uvm_info("SCBD", $sformatf("flag_first_prediction = %0d ",flag_first_prediction), UVM_NONE);
+               end
+
                cnt_fifo_in = cnt_fifo_in - 1;
                cnt_fifo_out = cnt_fifo_out - 1;
                `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
+               
+               if(cnt_fifo_out == 0) begin 
+                  flag_first_prediction = 0;
+                  `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
+                  `uvm_info("SCBD", $sformatf("flag_first_prediction = %0d ",flag_first_prediction), UVM_NONE);
+               end
+
             end
             2'b100: begin
-              monitor_full_out = pkt.data;
+               monitor_full_out = pkt.data;
                `uvm_info("SCBD", $sformatf("monitor_full_out = %0d ",monitor_full_out), UVM_NONE);
             end
          endcase
 
          //lets make the expected pkt!
-         
          if(start_bit) begin
+
             `uvm_info("SCBD", $sformatf("cnt_fifo_in = :%0h ",cnt_fifo_in), UVM_NONE); 
 
             operation = data_to_be_written[1:0];
@@ -157,11 +191,22 @@ class alu_scoreboard extends uvm_scoreboard;
                   actual_result[24:17] = data_to_be_written[9:2];
                   actual_result[16:0] = result;
                   `uvm_info("SCBD", $sformatf("actual result of multiplication = :%0h ",actual_result), UVM_NONE); 
-
                end
             endcase //adder or multiplier
-            m_ral_model.m_result_reg.predict(actual_result);
-            item_q.push_back(actual_result);  //FIFO_OUT
+
+            if (flag_first_prediction == 1) begin
+               item_q.push_back(actual_result);  //FIFO_OUT
+               `uvm_info("SCBD", $sformatf("size_of item_q = :%0d ",item_q.size()), UVM_NONE); 
+
+            end
+            else if (cnt_fifo_out ==1) begin
+               `uvm_info("SCBD", $sformatf("size_of item_q = :%0d ",item_q.size()), UVM_NONE); 
+               m_ral_model.m_result_reg.predict(actual_result);
+               `uvm_info("SCBD", $sformatf("prediction from function = :%0h ",actual_result), UVM_NONE); 
+               flag_first_prediction = 1;
+
+            end
+
             `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
             if (cnt_fifo_out == `FIFO_OUT_DEPTH) begin 
                monitor_full_out = 2;
@@ -169,9 +214,12 @@ class alu_scoreboard extends uvm_scoreboard;
             else if (cnt_fifo_out == 0) begin
                monitor_full_out = 1;
             end
+            
+
             m_ral_model.m_monitor_reg.predict(monitor_full_out);
          end
-      end //else no slave error
+         end //cnt_fifo_in
+      
 
    endfunction
 
