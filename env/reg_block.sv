@@ -291,7 +291,7 @@ class reg_block extends uvm_reg_block;
 
       //todo check the following --> lock and autopredict
       //default_map.set_auto_predict(1);
-      default_map.set_check_on_read(1);
+      default_map.set_check_on_read(0);
       lock_model();
 
    endfunction

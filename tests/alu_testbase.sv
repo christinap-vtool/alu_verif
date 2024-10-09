@@ -42,7 +42,9 @@ class alu_testbase extends uvm_test;
     
   task run_phase(uvm_phase phase);
     super.run_phase(phase);
-    //env.fifo_vr_sqr.vintf.rst_n = 1;
+    env.fifo_vr_sqr.vintf.rst_n = 1;
+   `uvm_info("testbase", $sformatf("run_phase testbase"), UVM_NONE)
+
 
    endtask
   

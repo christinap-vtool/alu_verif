@@ -1,1 +1,2 @@
-xrun  -timescale 1ns/1ns -sysv -access +rw -uvm -gui -coverage ALL -seed RANDOM -f compile_files.f -uvmhome CDNS-1.2 +UVM_TESTNAME=alu_full_fifo_in_test -clean -l test.log top_tb.sv +DUMPNAME="test.vcd" +VERBOSITY=UVM_NONE
+class alu_full_fifo_in_test extends alu_testbase;
+xrun  -timescale 1ns/1ns -sysv -access +rw -uvm -gui -coverage ALL -seed RANDOM -f compile_files.f -uvmhome CDNS-1.2 +UVM_TESTNAME=alu_base_test -clean -l test.log top_tb.sv +DUMPNAME="test.vcd" +VERBOSITY=UVM_NONE

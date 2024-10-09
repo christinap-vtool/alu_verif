@@ -1,7 +1,6 @@
 class alu_driver extends uvm_driver #(apb_transaction);
    `uvm_component_utils (alu_driver)
 
-
    function new(string name ="alu_driver", uvm_component parent = null);
       super.new (name, parent);
    endfunction
@@ -9,9 +8,6 @@ class alu_driver extends uvm_driver #(apb_transaction);
    //declare virtual interface handle and get them in build phase
    virtual interfc vintf;
    apb_transaction data_obj;
-
-   bit rw;
-
    fifo_config fifo_conf;
 
    virtual function void build_phase (uvm_phase phase);
@@ -25,26 +21,43 @@ class alu_driver extends uvm_driver #(apb_transaction);
    endfunction
 
    task run_phase(uvm_phase phase);
-      #1ns;
-      //reset
-      if(vintf.rst_n == 0) begin
-         @(posedge vintf.rst_n);
-         `uvm_info(get_name(), "out of RESET", UVM_NONE)
+    
+      forever begin
+         #1ns;
+         //reset
+         if(vintf.rst_n == 0) begin
+            @(posedge vintf.rst_n);
+            `uvm_info(get_name(), "out of RESET", UVM_NONE)
+         end
+         `uvm_info(get_name(), "got through RESET", UVM_NONE)
 
-      end
-      @(negedge vintf.rst_n);
-      `uvm_info(get_name(), "got through RESET", UVM_NONE)
+         init_signals();
+         `uvm_info(get_name(), "after the initialization of the signals", UVM_HIGH)
+            fork
+               do_drive();
+               reset();
+            join_any 
+            disable fork;
+      end  //forever begin
+   endtask //run_phase
 
+   task init_signals();
+      `uvm_info(get_name(), "hello i'm inside init_signal task", UVM_DEBUG)
 
+      `uvm_info(get_name(), "initialiazation of signals. Let's start", UVM_HIGH)
+      vintf.paddr <= 0;
+      vintf.pwdata <= 0;
+      vintf.pwrite <= 0;
+      vintf.psel <= 0;
+      vintf.penable <= 0;
+   endtask
 
-
-      init_signals();
-      `uvm_info(get_name(), "after the initialization of the signals", UVM_HIGH)
+   task do_drive();
       forever begin
          seq_item_port.get_next_item (data_obj);
          `uvm_info("DRIVER", $sformatf("data_obj.op:%0d ",data_obj.op), UVM_HIGH)
+
          if( data_obj.write == 1) begin
-            //if( rw == 1) begin
             `uvm_info(get_name(), "write_data will be called", UVM_DEBUG)
             write_data();
             `uvm_info(get_name(), "after the write task has been called", UVM_DEBUG)
@@ -55,20 +68,7 @@ class alu_driver extends uvm_driver #(apb_transaction);
          end
          seq_item_port.item_done(data_obj);
       end
-   endtask
-
-   task init_signals();
-      `uvm_info(get_name(), "hello i'm inside init_signal task", UVM_DEBUG)
-      // if( data_obj.op == write) begin
-
-      `uvm_info(get_name(), "initialiazation of signals. Let's start", UVM_HIGH)
-      vintf.rst_n <= 0;
-      vintf.paddr <= 0;
-      vintf.pwdata <= 0;
-      vintf.pwrite <= 0;
-      vintf.psel <= 0;
-      vintf.penable <= 0;
-   endtask
+      endtask //do_drive
 
    task write_data();
       vintf.psel <= 1;
@@ -93,13 +93,10 @@ class alu_driver extends uvm_driver #(apb_transaction);
          @(posedge vintf.ready );
          `uvm_info("DRIVER", $sformatf("vintf.ready:%0d ",vintf.ready), UVM_NONE)
       end
-      // else begin
-      //    @(posedge vintf.clk);
-      // end
+
       vintf.penable <= 0;
       vintf.psel <= 0;
 
-   
       `uvm_info(get_name(), "write task after vintf.ready", UVM_DEBUG)
       data_obj.slv_err = vintf.slv_err;
    endtask
@@ -115,17 +112,10 @@ class alu_driver extends uvm_driver #(apb_transaction);
       `uvm_info(get_name(), "read task after vintf.clk", UVM_DEBUG)
       `uvm_info("DRIVER", $sformatf("vintf.ready:%0d ",vintf.ready), UVM_NONE)
 
-      //  @(posedge vintf.clk);
-      //  @(posedge vintf.clk);    //wait state
+
        if (vintf.ready == 0) begin
          `uvm_info(get_name(), "inside vintf.ready if", UVM_DEBUG)
-
-         // while(vintf.ready == 0) begin
-         //    @(posedge  vintf.clk);
-         //    `uvm_info(get_name(), "waiting for ready", UVM_NONE)
-         // end
-
-         @(negedge vintf.ready ); //auto
+         @(negedge vintf.ready );
          `uvm_info("DRIVER", $sformatf("vintf.ready:%0d ",vintf.ready), UVM_NONE)
       end
       else begin
@@ -138,9 +128,14 @@ class alu_driver extends uvm_driver #(apb_transaction);
       `uvm_info("DRIVER", $sformatf("vintf.prdata: %0h ",vintf.prdata), UVM_NONE)
       data_obj.data = vintf.prdata;
       data_obj.slv_err = vintf.slv_err;
-
-
    endtask
+
+
+   task reset();
+      @(negedge vintf.rst_n);
+      `uvm_info("DRIVER", $sformatf("Reset detected "), UVM_NONE)
+
+   endtask //reset
 
 
 endclass
