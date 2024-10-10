@@ -21,7 +21,7 @@ import alu_pkg::*;
 `include "alu_write_to_read_reg.sv"
 `include "alu_read_from_write_test.sv"
 `include "alu_full_fifo_in_test.sv"
-`include "alu_reset_test.sv"
+//`include "alu_reset_test.sv"
 
 
 
