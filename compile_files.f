@@ -14,7 +14,6 @@
 -sv /space/users/christinap/alu/alu_verif/agent/interface.sv
 -sv /space/users/christinap/alu/alu_verif/tests/alu_test_pkg.sv
 
-//-sv /space/users/christinap/alu/top_tb.sv   //auto
 -sv /space/users/christinap/alu/alu_verif/top_tb.sv
 
 
