@@ -30,10 +30,28 @@ class alu_scoreboard extends uvm_scoreboard;
    bit [7:0]  id;
    //bit[24:0]  array_results [id];   //bit [7:0];
    bit [24:0] array_results [bit[7:0]];
+   bit [1:0]  control_reg_addr;
+   bit [1:0]  data_0_reg_addr;
+   bit [1:0]  data_1_reg_addr;
+   bit [1:0]  result_reg_addr;
+   bit [2:0]  monitor_reg_addr;
+
+
+
+   extern function void reg_address();
+   extern function void cause_of_slave_error(apb_transaction pkt);
+   extern function void comparison_expected_actual_pkt (apb_transaction pkt);
+
+
+
 
    //declare and create tlm analysis port to receive data objects from other tb components
    uvm_analysis_imp_ap #(apb_transaction, alu_scoreboard) ap_imp;
    uvm_analysis_imp_rst_detected #(bit, alu_scoreboard) rst_imp;
+
+
+
+
 
    function new (string name = "alu_scoreboard", uvm_component parent);
       super.new(name,parent);
@@ -45,6 +63,14 @@ class alu_scoreboard extends uvm_scoreboard;
       rst_imp   = new("rst_imp", this);
    endfunction
 
+   virtual task run_phase(uvm_phase phase);
+      `uvm_info("run_phase", $sformatf("inside the run phase"), UVM_NONE)
+      reg_address();
+
+   endtask
+
+
+
    //define action to be taken when a pkt is received via the declared analysis port
    virtual function void write_ap (apb_transaction pkt);
 
@@ -54,32 +80,7 @@ class alu_scoreboard extends uvm_scoreboard;
       `uvm_info("write", $sformatf("write operation= 0x%0h", pkt.op), UVM_NONE)
 
       if(pkt.slv_err == 1) begin
-         `uvm_info("SCBD", $sformatf("Cause of slave error:"), UVM_NONE)
-
-         if(((pkt.addr == 0) || (pkt.addr == 1) || (pkt.addr == 2)) && (pkt.op== 0 )) begin
-            `uvm_info("SCBD", $sformatf("the master tries to read from a write only register"), UVM_NONE)
-         end
-         else if(((pkt.addr == 3)||(pkt.addr == 4)) && (pkt.op == 1)) begin
-            `uvm_info("SCBD", $sformatf("the master tries to write in a read only register"), UVM_NONE)
-         end
-         else if(pkt.addr > 4) begin
-            `uvm_info("SCBD", $sformatf("The address provided by the master is bigger than 4"), UVM_NONE)
-         end
-         else if((pkt.addr == 3) && (cnt_fifo_out == 0)) begin 
-            `uvm_info("SCBD", $sformatf("The master tries to read a result from the Result register, but FIFO_OUT is empty."), UVM_NONE)
-         end
-         //else if((pkt.addr == 0) && (cnt_fifo_in > FIFO_IN_DEPTH)) begin 
-         else if( (cnt_fifo_in > `FIFO_IN_DEPTH)) begin 
-
-            `uvm_info("SCBD", $sformatf("The master tries to send new data to be computed, but FIFO_IN is full."), UVM_NONE)
-         end
-         //todo add the last bullet beacause of the slv_err is 1: The operation bits of ctrl_data are neither 2?b10 nor 2?b01.
-         //else if ((pkt.addr == 0) && ((pkt.data[2:1]!=2) || (pkt.data[2:1]!=1))) begin
-         else if ((operation!=1) || (operation!=2)) begin
-             `uvm_info("SCBD", $sformatf("The operation bits of ctrl_data are neither 2?b10 nor 2?b01."), UVM_NONE)
-         end
-         else
-            `uvm_error(get_type_name (), $sformatf("No idea from where sl_err is coming from."))
+         cause_of_slave_error(pkt);
       end //pkt.slv_err == 1)
 
       else begin
@@ -104,31 +105,10 @@ class alu_scoreboard extends uvm_scoreboard;
                data_to_be_written[41:26] = pkt.data;
             end
             2'b11: begin
-               id_from_dut = pkt.data[24:17];
-               result_from_dut = pkt.data;
-               `uvm_info("SCBD", $sformatf("id from dut =%0d",id_from_dut), UVM_NONE);
-
-               if(array_results.exists (id_from_dut)) begin
-                  if(array_results[id_from_dut] == result_from_dut) begin
-                     //info comparison succed
-                     `uvm_info("SCBD", $sformatf("comparison was succesful"), UVM_NONE);
-
-                  end
-                  else  begin
-                     //uvm error mismatch
-                     `uvm_error(get_type_name (), $sformatf("Mismatch. Data from dut =0x%0h data drom ral =0x%0h",result_from_dut, array_results[id_from_dut]))
-                  end
-                  
-               end
-               else  begin
-                  //uvm_error : dut id doesn;t match with any of the ids from scoreboard
-                  `uvm_error(get_type_name (), $sformatf("The id of dut =0x%0h doesn't match any of the ids in the array.",id_from_dut))
-
-               end
+               comparison_expected_actual_pkt(pkt);
                cnt_fifo_in = cnt_fifo_in - 1;
                cnt_fifo_out = cnt_fifo_out - 1;
                `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE);
-
             end
             2'b100: begin
                monitor_full_out = pkt.data;
@@ -173,10 +153,10 @@ class alu_scoreboard extends uvm_scoreboard;
                   //and only the (DATA_SIZE/2) least significant bits are used in the multiplier.
                   `uvm_info("SCBD", $sformatf("multiplication = :0x%0h ",operation), UVM_NONE); 
 
-                  first_operand_mul = first_operand[7:0]; //magic numver
+                  first_operand_mul = first_operand[7:0];
                   `uvm_info("SCBD", $sformatf("first_operand_mul = :0x%0h ",first_operand_mul), UVM_NONE); 
 
-                  second_operand_mul = second_operand[7:0]; //magic numbers
+                  second_operand_mul = second_operand[7:0];
                   `uvm_info("SCBD", $sformatf("second_operand_mul = :0x%0h ",second_operand_mul), UVM_NONE); 
 
                   result = first_operand_mul * second_operand_mul;
@@ -216,4 +196,70 @@ class alu_scoreboard extends uvm_scoreboard;
    endfunction
 
 endclass
+
+
+function void alu_scoreboard::reg_address();
+
+   control_reg_addr = m_ral_model.m_control_reg.get_address();
+   data_0_reg_addr = m_ral_model.m_data0_reg.get_address();
+   data_1_reg_addr = m_ral_model.m_data1_reg.get_address();
+   monitor_reg_addr = m_ral_model.m_monitor_reg.get_address();
+   result_reg_addr = m_ral_model.m_result_reg.get_address();
+
+   `uvm_info("write", $sformatf("control_reg_addr = %0d", control_reg_addr), UVM_NONE)
+   `uvm_info("write", $sformatf("data_0_reg_addr= %0d", data_0_reg_addr), UVM_NONE)
+   `uvm_info("write", $sformatf("data_1_reg_addr= %0d", data_1_reg_addr), UVM_NONE)
+   `uvm_info("write", $sformatf("result_reg_addr = %0d", result_reg_addr), UVM_NONE)
+   `uvm_info("write", $sformatf("monitor_reg_addr = %0d", monitor_reg_addr), UVM_NONE)
+endfunction :reg_address
+
+function void alu_scoreboard::cause_of_slave_error(apb_transaction pkt);
+   `uvm_info("SCBD", $sformatf("Cause of slave error:"), UVM_NONE)
+
+         if(((pkt.addr == control_reg_addr) || (pkt.addr == data_0_reg_addr) || (pkt.addr == data_1_reg_addr)) && (pkt.op== read )) begin
+            `uvm_info("SCBD", $sformatf("the master tries to read from a write only register"), UVM_NONE)
+         end
+         else if(((pkt.addr == monitor_reg_addr)||(pkt.addr == result_reg_addr)) && (pkt.op == write)) begin
+            `uvm_info("SCBD", $sformatf("the master tries to write in a read only register"), UVM_NONE)
+         end
+         else if(pkt.addr > result_reg_addr) begin
+            `uvm_info("SCBD", $sformatf("The address provided by the master is bigger than 4"), UVM_NONE)
+         end
+          //add the last bullet beacause of the slv_err is 1: The operation bits of ctrl_data are neither 2?b10 nor 2?b01.
+         else if (((operation!=1) && (operation!=2)) && (pkt.addr == control_reg_addr)) begin
+             `uvm_info("SCBD", $sformatf("The operation bits of ctrl_data are neither 2?b10 nor 2?b01. op=%d", operation), UVM_NONE)
+         end
+         else if((pkt.addr == result_reg_addr) && (cnt_fifo_out == 0)) begin 
+            `uvm_info("SCBD", $sformatf("The master tries to read a result from the Result register, but FIFO_OUT is empty."), UVM_NONE)
+         end
+         //else if((pkt.addr == 0) && (cnt_fifo_in > FIFO_IN_DEPTH)) begin 
+         else if( (cnt_fifo_in > `FIFO_IN_DEPTH)) begin 
+
+            `uvm_info("SCBD", $sformatf("The master tries to send new data to be computed, but FIFO_IN is full."), UVM_NONE)
+         end
+        
+
+         else
+            `uvm_error(get_type_name (), $sformatf("No idea from where slv_err is coming from."))
+endfunction :cause_of_slave_error
+
+function void alu_scoreboard::comparison_expected_actual_pkt(apb_transaction pkt);
+   id_from_dut = pkt.data[24:17];
+   result_from_dut = pkt.data;
+   `uvm_info("SCBD", $sformatf("id from dut =%0d",id_from_dut), UVM_NONE);
+
+   if(array_results.exists (id_from_dut)) begin
+      if(array_results[id_from_dut] == result_from_dut) begin
+         `uvm_info("SCBD", $sformatf("comparison was succesful"), UVM_NONE);
+      end
+      else  begin
+         `uvm_error(get_type_name (), $sformatf("Mismatch. Data from dut =0x%0h data drom ral =0x%0h",result_from_dut, array_results[id_from_dut]))
+      end
+   end
+   else  begin
+      `uvm_error(get_type_name (), $sformatf("The id of dut =0x%0h doesn't match any of the ids in the array.",id_from_dut))
+   end
+endfunction : comparison_expected_actual_pkt
+
+
 `endif

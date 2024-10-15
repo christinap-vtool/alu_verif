@@ -1,24 +1,72 @@
+`ifndef APB_VIRTUAL_SEQ_LIB_SV
+`define APB_VIRTUAL_SEQ_LIB_SV
+
 class base_seq extends uvm_sequence #(apb_transaction);
    `uvm_object_utils(base_seq)
    `uvm_declare_p_sequencer(fifo_virtual_sequencer)
-   rand bit[2:0] addr;                             // todo check the width
+   //rand bit[2:0] addr;                             // todo check the width
    apb_transaction  data_obj;
 
-   constraint c_addr {addr inside{0,1,2,3,4}; }
+   //constraint c_addr {addr inside{0,1,2,3,4}; }
 
    function new (string name = "base_seq");
       super.new(name);
    endfunction
 
    virtual task body();
-      data_obj = apb_transaction::type_id::create("data_obj");
-      if(!data_obj.randomize()) begin
-         `uvm_error("FIFO_SEQUENCE","Randomize failed");
-      end
+      // data_obj = apb_transaction::type_id::create("data_obj");
+      // if(!data_obj.randomize()) begin
+      //    `uvm_error("FIFO_SEQUENCE","Randomize failed");
+      // end
 
    endtask
 
 endclass
+
+class apb_write_read_sequence extends uvm_sequence#(apb_transaction);
+   `uvm_object_utils(apb_write_read_sequence)
+   `uvm_declare_p_sequencer(fifo_sequencer)
+
+
+   rand bit [`APB_BUS_SIZE-1 : 0] mdata;
+   rand bit [`REG_NUMBER-1 :0] maddr;
+   rand wr_rd_type operation;
+
+   constraint addr_c{maddr >4;}
+
+   function new (string name ="");
+      super.new(name);
+   endfunction
+
+
+   virtual task body();
+      `uvm_info(get_name,$sformatf("i'm in the body"), UVM_DEBUG)
+      req = apb_transaction::type_id::create("req");
+      `uvm_info(get_name,$sformatf("after start_item"), UVM_DEBUG)
+
+
+      if ( !req.randomize() with {
+         addr      == maddr;
+         data      == mdata;
+         op        == operation;
+         })
+
+      begin
+         `uvm_fatal(get_name(), "APB item randomization failed")
+      end else begin 
+         `uvm_info(get_name(), $psprintf("Transaction to be sent is \n%s", req.sprint()), UVM_NONE)
+      end
+
+      start_item(req);
+      finish_item(req);
+
+      `uvm_info(get_name(), "Item finished. Out of body!", UVM_HIGH)
+
+   endtask
+
+endclass
+
+
 
 class apb_seq extends base_seq;
    `uvm_object_utils(apb_seq)
@@ -38,8 +86,9 @@ class apb_seq extends base_seq;
    rand int wr_trans;
 
    constraint id_c {id >0;}
-   constraint operation_c {operation inside{1,2};}
-   //constraint operation_c {operation == 4;}
+   //constraint operation_c {operation inside{1,2};}
+   constraint operation_c {operation inside{0,1,2,3};}
+
 
    //constraint start_bit_c {start_bit == 1;}
 
@@ -71,7 +120,6 @@ class apb_seq extends base_seq;
          data_obj.op = write;
 
          //here the register data0 will be written
-         `uvm_info(get_name(), "patates seq", UVM_NONE)
 
          `uvm_info("seq", $sformatf("data to be sent:%0h ",data0), UVM_NONE)
 
@@ -270,7 +318,7 @@ class alu_fifo_in_full_seq extends base_seq;
 
    constraint id_c {id >0;}
    constraint operation_c {operation inside{1,2};}
-   //constraint operation_c {operation == 2;}
+
 
    constraint start_bit_c {start_bit == 1;}
 
@@ -457,3 +505,7 @@ class alu_reset_seq extends base_seq;
       disable fork;
    endtask
 endclass
+
+`endif
+
+

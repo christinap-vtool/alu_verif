@@ -21,7 +21,7 @@ class alu_driver extends uvm_driver #(apb_transaction);
    endfunction
 
    task run_phase(uvm_phase phase);
-    
+
       forever begin
          #1ns;
          //reset

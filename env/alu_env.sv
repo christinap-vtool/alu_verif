@@ -4,7 +4,6 @@ class alu_env extends uvm_env;
    alu_agent agent;
    alu_scoreboard scbd;
    fifo_virtual_sequencer fifo_vr_sqr;
-   //todo we have to add the declaration for the ral_model, adapter and predictor
    reg_block   m_ral_model; //register model
    adapter   m_apb_adapter; //convert reg tx <-> bus type packets
    uvm_reg_predictor #(apb_transaction)  m_apb_predictor;   //map apb tx to register in model
@@ -37,8 +36,7 @@ class alu_env extends uvm_env;
       m_ral_model.reg_map.set_sequencer(.sequencer(agent.sequencer), .adapter(m_apb_adapter)); 
       m_ral_model.reg_map.set_base_addr(0); 
 
-      //fifo_vr_sqr.write_seqr = agent.sequencer;  //todo it doesn't work. the write way o set the sequencer is through the reg_map
-      //only with the above line doesn't work
+      fifo_vr_sqr.apb_seqr = agent.sequencer;
 
       //connect analysis ports from agent to the .scoreboard
 
