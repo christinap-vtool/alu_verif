@@ -25,8 +25,8 @@ class alu_driver extends uvm_driver #(apb_transaction);
       forever begin
          #1ns;
          //reset
-         if(vintf.rst_n == 0) begin
-            @(posedge vintf.rst_n);
+         if(vintf.presetn == 0) begin
+            @(posedge vintf.presetn);
             `uvm_info(get_name(), "out of RESET", UVM_NONE)
          end
          `uvm_info(get_name(), "got through RESET", UVM_NONE)
@@ -74,7 +74,6 @@ class alu_driver extends uvm_driver #(apb_transaction);
       vintf.psel <= 1;
       vintf.paddr <= data_obj.addr;
       vintf.pwdata <= data_obj.data;
-      vintf.rst_n <= 1;
       vintf.pwrite <= 1;
       `uvm_info(get_name(), "write task before vintf.clk", UVM_DEBUG)
       `uvm_info("DRIVER", $sformatf("vintf.paddr:%0d ",vintf.paddr), UVM_NONE)
@@ -104,7 +103,6 @@ class alu_driver extends uvm_driver #(apb_transaction);
    task read_data();
       vintf.psel <= 1;
       vintf.paddr <= data_obj.addr;
-      vintf.rst_n <= 1;
       vintf.pwrite <= 0;
 
       @(posedge vintf.clk);

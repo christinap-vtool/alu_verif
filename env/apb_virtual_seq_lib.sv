@@ -29,7 +29,9 @@ class apb_write_read_sequence extends uvm_sequence#(apb_transaction);
 
 
    rand bit [`APB_BUS_SIZE-1 : 0] mdata;
+   rand bit [`ADDR_W :0] maddr;
    rand bit [`REG_NUMBER-1 :0] maddr;
+   rand bit [`ADDR_W :0] maddr;
    rand wr_rd_type operation;
 
    constraint addr_c{maddr >4;}
@@ -86,8 +88,14 @@ class apb_seq extends base_seq;
    rand int wr_trans;
 
    constraint id_c {id >0;}
+   constraint operation_c {operation dist {0:/10, [1:2]:/80, 3:/10};}
+
+   constraint operation_c {operation dist {0:/10, [1:2]:/80, 3:/10};}
+
    //constraint operation_c {operation inside{1,2};}
+   //constraint operation_c {operation inside{0,1,2,3};}
    constraint operation_c {operation inside{0,1,2,3};}
+   //constraint operation_c {operation inside{0,1,2,3};}
 
 
    //constraint start_bit_c {start_bit == 1;}
@@ -481,7 +489,9 @@ class alu_reset_seq extends base_seq;
                #600ns;
                m_ral_model.m_control_reg.write(status,control);
 
-               #600ns;
+               // #800ns;
+               // #600ns;
+               #800ns;
                `uvm_info(get_name(), " reset de-asserted:!", UVM_NONE)
 
                m_ral_model.m_result_reg.read(status,rdata);

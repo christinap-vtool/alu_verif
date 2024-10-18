@@ -36,6 +36,7 @@ class alu_scoreboard extends uvm_scoreboard;
    bit [1:0]  result_reg_addr;
    bit [2:0]  monitor_reg_addr;
 
+   bit[1:0] operation_bit; //to be used within the cause_of_slave_error function
 
 
    extern function void reg_address();
@@ -48,9 +49,6 @@ class alu_scoreboard extends uvm_scoreboard;
    //declare and create tlm analysis port to receive data objects from other tb components
    uvm_analysis_imp_ap #(apb_transaction, alu_scoreboard) ap_imp;
    uvm_analysis_imp_rst_detected #(bit, alu_scoreboard) rst_imp;
-
-
-
 
 
    function new (string name = "alu_scoreboard", uvm_component parent);
@@ -165,6 +163,9 @@ class alu_scoreboard extends uvm_scoreboard;
 
                   //`uvm_info("SCBD", $sformatf("actual result of multiplication = :0x%0h ",actual_result), UVM_NONE); 
                end
+               default: begin 
+                  `uvm_error(get_type_name (), $sformatf("operation error op=%d", operation))
+               end
             endcase //adder or multiplier
             actual_result[24:17] = data_to_be_written[9:2];
             actual_result[16:0] = result;
@@ -199,7 +200,7 @@ endclass
 
 
 function void alu_scoreboard::reg_address();
-
+//The reg_address function is called to get the address of the register from the reg_model.
    control_reg_addr = m_ral_model.m_control_reg.get_address();
    data_0_reg_addr = m_ral_model.m_data0_reg.get_address();
    data_1_reg_addr = m_ral_model.m_data1_reg.get_address();
@@ -214,36 +215,39 @@ function void alu_scoreboard::reg_address();
 endfunction :reg_address
 
 function void alu_scoreboard::cause_of_slave_error(apb_transaction pkt);
+//The cause_of_slave_error function is called when a slave error occurs to generate the corresponding information.
    `uvm_info("SCBD", $sformatf("Cause of slave error:"), UVM_NONE)
+   operation_bit =pkt.data[2:1];
 
-         if(((pkt.addr == control_reg_addr) || (pkt.addr == data_0_reg_addr) || (pkt.addr == data_1_reg_addr)) && (pkt.op== read )) begin
-            `uvm_info("SCBD", $sformatf("the master tries to read from a write only register"), UVM_NONE)
-         end
-         else if(((pkt.addr == monitor_reg_addr)||(pkt.addr == result_reg_addr)) && (pkt.op == write)) begin
-            `uvm_info("SCBD", $sformatf("the master tries to write in a read only register"), UVM_NONE)
-         end
-         else if(pkt.addr > result_reg_addr) begin
-            `uvm_info("SCBD", $sformatf("The address provided by the master is bigger than 4"), UVM_NONE)
-         end
-          //add the last bullet beacause of the slv_err is 1: The operation bits of ctrl_data are neither 2?b10 nor 2?b01.
-         else if (((operation!=1) && (operation!=2)) && (pkt.addr == control_reg_addr)) begin
-             `uvm_info("SCBD", $sformatf("The operation bits of ctrl_data are neither 2?b10 nor 2?b01. op=%d", operation), UVM_NONE)
-         end
-         else if((pkt.addr == result_reg_addr) && (cnt_fifo_out == 0)) begin 
-            `uvm_info("SCBD", $sformatf("The master tries to read a result from the Result register, but FIFO_OUT is empty."), UVM_NONE)
-         end
-         //else if((pkt.addr == 0) && (cnt_fifo_in > FIFO_IN_DEPTH)) begin 
-         else if( (cnt_fifo_in > `FIFO_IN_DEPTH)) begin 
+   if(((pkt.addr == control_reg_addr) || (pkt.addr == data_0_reg_addr) || (pkt.addr == data_1_reg_addr)) && (pkt.op== read )) begin
+      `uvm_info("SCBD", $sformatf("the master tries to read from a write only register"), UVM_NONE)
+   end
+   else if(((pkt.addr == monitor_reg_addr)||(pkt.addr == result_reg_addr)) && (pkt.op == write)) begin
+      `uvm_info("SCBD", $sformatf("the master tries to write in a read only register"), UVM_NONE)
+   end
+   else if(pkt.addr > result_reg_addr) begin
+      `uvm_info("SCBD", $sformatf("The address provided by the master is bigger than 4"), UVM_NONE)
+   end
 
-            `uvm_info("SCBD", $sformatf("The master tries to send new data to be computed, but FIFO_IN is full."), UVM_NONE)
-         end
-        
+   //add the last bullet beacause of the slv_err is 1: The operation bits of ctrl_data are neither 2?b10 nor 2?b01.
+   //else if (((operation!=1) && (operation!=2)) && (pkt.addr == control_reg_addr)) begin
+   else if (((operation_bit!=1) && (operation_bit!=2)) && (pkt.addr == control_reg_addr)) begin
+      `uvm_info("SCBD", $sformatf("The operation bits of ctrl_data are neither 2?b10 nor 2?b01. op=%d", operation_bit), UVM_NONE)
+   end
+   else if((pkt.addr == result_reg_addr) && (cnt_fifo_out == 0)) begin 
+      `uvm_info("SCBD", $sformatf("The master tries to read a result from the Result register, but FIFO_OUT is empty."), UVM_NONE)
+   end
+   //else if((pkt.addr == 0) && (cnt_fifo_in > FIFO_IN_DEPTH)) begin 
+   else if( (cnt_fifo_in > `FIFO_IN_DEPTH)) begin 
+      `uvm_info("SCBD", $sformatf("The master tries to send new data to be computed, but FIFO_IN is full."), UVM_NONE)
+   end
 
-         else
-            `uvm_error(get_type_name (), $sformatf("No idea from where slv_err is coming from."))
+   else
+      `uvm_error(get_type_name (), $sformatf("No idea where slv_err is coming from. op=%d", operation))
 endfunction :cause_of_slave_error
 
 function void alu_scoreboard::comparison_expected_actual_pkt(apb_transaction pkt);
+//The comparison_expected_actual function is called to compare the actual result with the expected result.
    id_from_dut = pkt.data[24:17];
    result_from_dut = pkt.data;
    `uvm_info("SCBD", $sformatf("id from dut =%0d",id_from_dut), UVM_NONE);

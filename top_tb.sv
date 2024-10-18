@@ -15,7 +15,7 @@ module top_tb();
   wire psel,penable,ready,slv_err, pwrite, rst_n;
   wire [15:0] pwdata;
   wire [31:0] prdata;
-  wire [2:0]  paddr;
+  wire [(`REG_NUMBER-1):0]  paddr;
 
 //declaration of the interface
   //apb_signals vintf();
@@ -36,7 +36,7 @@ module top_tb();
    assign vintf.ready = ready;
    assign vintf.slv_err = slv_err;
    assign vintf.prdata = prdata;
-   
+   assign vintf.presetn = vintf.rst_n & RST_n;
    
 
 
@@ -55,10 +55,9 @@ module top_tb();
    //  rst_n =1;
    //   #10 rst_n = 0;
    //   #10 rst_n =1;
-   RST_n =1;
-     #10 RST_n = 0;
-     #10 RST_n =1;
-
+   RST_n =0;
+     //#20 RST_n = 0;
+     #40 RST_n =1;
   end
   always #10 clk = ~clk;
 
@@ -88,6 +87,8 @@ module top_tb();
     uvm_config_db#(fifo_config)::set(null,"*","fifo_config",conf);
    
      run_test();
+
+
    end
 endmodule//top_tb
 
