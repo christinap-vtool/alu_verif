@@ -11,6 +11,8 @@ class alu_env extends uvm_env;
 
    alu_env_config  env_cfg;
 
+   alu_coverage cvg_obj;
+
    function new (string name = "alu_env",uvm_component parent = null);
       super.new(name, parent);
    endfunction
@@ -27,11 +29,15 @@ class alu_env extends uvm_env;
       m_ral_model.lock_model ();   //a register model has to be locked via invocation of its lock() function in order to prevent any other testbench component or part from modifying the structure or adding registers to it.  
       uvm_config_db #(reg_block):: set(null, "top_tb", "m_ral_model", m_ral_model);
       m_apb_adapter = adapter::type_id::create("m_apb_adapter",,get_full_name());
+
+      cvg_obj = new();
    endfunction
 
    function void connect_phase(uvm_phase phase);
       super.connect_phase (phase);
       agent.monitor.ap_monitor.connect(scbd.ap_imp);
+      agent.monitor.reset_port.connect(scbd.rst_imp);
+
       // m_ral_model.reg_map.set_sequencer(.sequencer(agent.sequencer));
       m_ral_model.reg_map.set_sequencer(.sequencer(agent.sequencer), .adapter(m_apb_adapter)); 
       m_ral_model.reg_map.set_base_addr(0); 
@@ -48,6 +54,8 @@ class alu_env extends uvm_env;
       scbd.m_ral_model = m_ral_model;
 
       agent.monitor.ap_monitor.connect(m_apb_predictor.bus_in);
+
+      scbd.cvg_obj = cvg_obj;
       m_ral_model.reg_map.set_auto_predict(0);
 
    endfunction

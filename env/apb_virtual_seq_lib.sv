@@ -30,8 +30,7 @@ class apb_write_read_sequence extends uvm_sequence#(apb_transaction);
 
    rand bit [`APB_BUS_SIZE-1 : 0] mdata;
    rand bit [`ADDR_W :0] maddr;
-   rand bit [`REG_NUMBER-1 :0] maddr;
-   rand bit [`ADDR_W :0] maddr;
+   //rand bit [`REG_NUMBER-1 :0] maddr;
    rand wr_rd_type operation;
 
    constraint addr_c{maddr >4;}
@@ -87,22 +86,17 @@ class apb_seq extends base_seq;
 
    rand int wr_trans;
 
-   constraint id_c {id >0;}
-   constraint operation_c {operation dist {0:/10, [1:2]:/80, 3:/10};}
+   constraint id_c {unique {id}; id>0;}
 
-   constraint operation_c {operation dist {0:/10, [1:2]:/80, 3:/10};}
+   //constraint operation_c {operation dist {0:/10, [1:2]:/80, 3:/10};}
+   constraint operation_c {operation dist {0:/5, 1:/45, 2:/45, 3:/5};}
 
-   //constraint operation_c {operation inside{1,2};}
-   //constraint operation_c {operation inside{0,1,2,3};}
-   constraint operation_c {operation inside{0,1,2,3};}
+
    //constraint operation_c {operation inside{0,1,2,3};}
 
 
    //constraint start_bit_c {start_bit == 1;}
 
-    //constraint data0_c {data0 == 255;}
-    //constraint data1_c {data1 == 255;}
-   //constraint id_c{id == 2;}
    constraint wr_trans_c{soft wr_trans>0; soft wr_trans<4;}
 
    function new (string name = "write_read_seq");
@@ -175,7 +169,8 @@ class apb_seq extends base_seq;
 endclass
 
 
-
+//The master tries to write in a Read Only register. The only RO 
+//registers in this design are the Result register and the Monitor Register
 class write_to_read_reg extends base_seq;
    `uvm_object_utils(write_to_read_reg)
    rand bit[24:0] data;
@@ -212,7 +207,7 @@ class write_to_read_reg extends base_seq;
    endtask
 endclass
 
-
+//The master tries to read from a WO register
 class read_from_write_reg extends base_seq;
    `uvm_object_utils(read_from_write_reg)
    bit[15:0] rdata;
@@ -237,7 +232,6 @@ class read_from_write_reg extends base_seq;
    virtual task body();
       `uvm_info(get_name(), "start seq", UVM_NONE)
       repeat(wr_trans) begin
-         //randomize(data);
 
        m_ral_model.m_data0_reg.read(status,rdata);
        `uvm_info("seq", $sformatf("result bit:%0h ",rdata), UVM_NONE)
@@ -275,10 +269,9 @@ class alu_fifo_out_empty_seq extends base_seq;
    bit[15:0]  rdata;   //here will be saved the data that will be read from data0
    rand int wr_trans;
 
-   constraint id_c {id >0;}
+   constraint id_c {unique {id}; id>0;}
    constraint operation_c {operation inside{1,2};}
    constraint start_bit_c {start_bit == 1;}
-   // constraint id_c{id == 2;}
    constraint wr_trans_c{soft wr_trans>0; soft wr_trans<4;}
 
    function new (string name = "alu_fifo_out_empty_seq");
@@ -302,7 +295,7 @@ class alu_fifo_out_empty_seq extends base_seq;
    endtask
 endclass
 
-
+/*
 //The master tries to read a result from the Result register, but FIFO_OUT is empty
 class alu_fifo_in_full_seq extends base_seq;
    `uvm_object_utils(alu_fifo_in_full_seq)
@@ -322,9 +315,10 @@ class alu_fifo_in_full_seq extends base_seq;
 
    rand int wr_trans;
    rand int rd_trans;
+//bit [7:0] id;
 
-
-   constraint id_c {id >0;}
+//rand bit[7:0] id_queue[$:50];
+   constraint id_c {unique {id}; id>0;}
    constraint operation_c {operation inside{1,2};}
 
 
@@ -335,6 +329,7 @@ class alu_fifo_in_full_seq extends base_seq;
    constraint wr_trans_c{soft wr_trans>0; soft wr_trans<4;}
    constraint rd_trans_c{soft rd_trans>0; soft rd_trans<4;}
 
+//constraint cu { unique {id_queue}; }
 
    function new (string name = "write_read_seq");
       super.new(name);
@@ -348,6 +343,7 @@ class alu_fifo_in_full_seq extends base_seq;
 
    virtual task body();
       `uvm_info(get_name(), "start seq", UVM_NONE) 
+
       repeat(wr_trans) begin
          randomize(data0);
          randomize(data1);
@@ -378,6 +374,11 @@ class alu_fifo_in_full_seq extends base_seq;
       control[0] = start_bit;
       control[2:1] = operation;
       control[15:8] =id;
+      // id = id_queue.pop_front();
+      // `uvm_info("seq", $sformatf("id from queue:%0h ",id), UVM_NONE)
+
+      // control[15:8] =id;
+
       `uvm_info("seq", $sformatf("istart bit:%0h ",start_bit), UVM_NONE)
       `uvm_info("seq", $sformatf("operation:%0h ",operation), UVM_NONE)
       `uvm_info("seq", $sformatf(" id:%0h ",id), UVM_NONE)
@@ -403,7 +404,7 @@ class alu_fifo_in_full_seq extends base_seq;
 
    endtask
 endclass
-
+*/
 class alu_reset_seq extends base_seq;
    `uvm_object_utils(alu_reset_seq)
    rand bit[15:0] data0;
@@ -425,7 +426,7 @@ class alu_reset_seq extends base_seq;
    rand bit random_reset; //trigger a reset random;y
    int counter;
 
-   constraint id_c {id >0;}
+   constraint id_c {unique {id}; id>0;}
    constraint operation_c {operation inside{1,2};}
    //constraint operation_c {operation == 2;}
 
@@ -516,6 +517,130 @@ class alu_reset_seq extends base_seq;
    endtask
 endclass
 
+
+
+
+
+
+//The master tries to read a result from the Result register, but FIFO_OUT is empty
+class alu_fifo_in_full_seq extends base_seq;
+   `uvm_object_utils(alu_fifo_in_full_seq)
+   rand bit[15:0] data0;
+   rand bit[15:0] data1;
+   rand bit [7:0] id;
+   rand bit[1:0]  operation;
+   rand bit start_bit;
+   bit[15:0] control = 0;
+
+   reg_block   m_ral_model; //register model
+   uvm_status_e status;
+   apb_transaction data_obj;
+   uvm_reg_data_t   ref_data;   //this is for the desire value
+
+   bit[24:0]  rdata;   //here will be saved the data that will be read from data0
+
+   rand int wr_trans;
+   rand int rd_trans;
+
+
+   rand bit[7:0] id_queue[$];
+   int i=0;
+   constraint id_c {unique {id}; id>0;}
+   constraint id_queue_c {unique {id_queue};}
+
+   constraint operation_c {operation inside{1,2};}
+
+   constraint start_bit_c {start_bit == 1;}
+
+    //constraint data0_c {data0 inside {1,2,3,4,5};}
+    //constraint data1_c {data1 inside {1,2,3,4,5};}
+   constraint wr_trans_c{soft wr_trans>0; soft wr_trans<4;}
+   constraint rd_trans_c{soft rd_trans>0; soft rd_trans<4;}
+
+
+
+   function new (string name = "write_read_seq");
+      super.new(name);
+   endfunction
+
+
+   virtual task pre_body();
+   if(!uvm_config_db #(reg_block):: get(null, "top_tb", "m_ral_model", m_ral_model))
+      `uvm_fatal("seq","cannot get config")
+
+   endtask
+
+   virtual task body();
+      `uvm_info(get_name(), "start seq", UVM_NONE) 
+
+       `uvm_info("seq", $sformatf("size of qeue:%0d  ",id_queue.size()), UVM_NONE)
+
+      for(int i=0; i< wr_trans; i++) begin
+         randomize(id);
+         `uvm_info("seq", $sformatf("i, randomize id:%0d %0h ",i, id), UVM_NONE)
+         id_queue.push_back(id);
+      end
+         `uvm_info("seq", $sformatf("size of qeue:%0d  ",id_queue.size()), UVM_NONE)
+      repeat(wr_trans) begin
+         randomize(data0);
+         randomize(data1);
+
+         randomize(operation);
+         //randomize(start_bit);
+         data_obj = apb_transaction :: type_id ::create("dtata_obj");
+
+         //data_obj.op = write;
+
+      //here the register data0 will be written
+      `uvm_info("seq", $sformatf("data to be sent:%0h ",data0), UVM_NONE)
+
+      m_ral_model.m_data0_reg.write(status,data0);
+      `uvm_info(get_name(), " seq after data 0", UVM_NONE)
+      //here the register data1 will be written
+
+      `uvm_info("seq", $sformatf("data to be sent:%0h ",data1), UVM_NONE)
+
+
+      m_ral_model.m_data1_reg.write(status,data1);
+      `uvm_info(get_name(), " seq after data 1", UVM_NONE)
+
+      //here the register control will be written
+      `uvm_info("seq", $sformatf("data to be sent:%0h ",data0), UVM_NONE)
+
+
+      control[0] = start_bit;
+      control[2:1] = operation;
+      //control[15:8] =id;
+      // id = id_queue.pop_front();
+      // `uvm_info("seq", $sformatf("id from queue:%0h ",id), UVM_NONE)
+
+       control[15:8] =id_queue.pop_front();
+
+      `uvm_info("seq", $sformatf("istart bit:%0h ",start_bit), UVM_NONE)
+      `uvm_info("seq", $sformatf("operation:%0h ",operation), UVM_NONE)
+      `uvm_info("seq", $sformatf(" id:%0h ",id), UVM_NONE)
+      `uvm_info("seq", $sformatf("initialization of control register:%0h ",control), UVM_NONE)
+
+
+      m_ral_model.m_control_reg.write(status,control);
+      //monitor register
+      #600ns;
+      m_ral_model.m_monitor_reg.read(status,rdata);
+      `uvm_info("seq", $sformatf("monitor bit:%0d ",rdata), UVM_NONE);
+      `uvm_info(get_name(), " seq after monitor", UVM_NONE)
+
+      end
+      repeat(rd_trans) begin
+         #1000ns;
+         `uvm_info("seq", $sformatf("result:%0d ",rdata), UVM_NONE);
+         m_ral_model.m_result_reg.read(status, rdata);
+      end
+
+      data_obj.print();
+
+
+   endtask
+endclass
 `endif
 
 

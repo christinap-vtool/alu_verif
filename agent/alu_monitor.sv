@@ -28,24 +28,23 @@ class alu_monitor extends uvm_monitor;
    virtual task run_phase(uvm_phase phase);
       forever begin
          @(posedge vintf.clk);
-         if(!vintf.rst_n) begin
-            @(posedge vintf.rst_n);
+         if(!vintf.presetn) begin
+            @(posedge vintf.presetn);
          end
          begin
             fork
-               begin
-                  wr_rd_task();
-                  monitor_reset();
-               end
+               wr_rd_task();
+               monitor_reset();
             join_any
             disable fork;
+            `uvm_info("MONITOR", "AFTER", UVM_HIGH)
          end
       end
    endtask
 
    task monitor_reset();
+      @(negedge vintf.presetn);
       `uvm_info("MONITOR", "SYSTEM RESET DETECTED", UVM_NONE)
-      @(negedge vintf.rst_n);
       reset_port.write(1);
    endtask
 
@@ -64,7 +63,7 @@ class alu_monitor extends uvm_monitor;
          end
          tr_item.addr = vintf.paddr;
          tr_item.slv_err = vintf.slv_err;
-         `uvm_info("MONITOR", $sformatf("DATA READ WRITE addr:%0d data:%0d slverr:%0d",tr_item.addr ,tr_item.data,tr_item.slv_err), UVM_NONE); 
+         `uvm_info("MONITOR", $sformatf("DATA READ WRITE addr:%0d data:%0d slverr:%0d",tr_item.addr ,tr_item.data,tr_item.slv_err), UVM_HIGH);
          wait (vintf.penable == 0 && vintf.psel ==0);
          ap_monitor.write (tr_item);
       end

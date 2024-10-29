@@ -15,7 +15,7 @@ import alu_pkg::*;
 
 `include "alu_testbase.sv"
 `include "alu_base_test.sv"
-//`include "alu_cntr_test.sv"
+
 
 `include "alu_empty_fifo_out_test.sv"
 `include "alu_write_to_read_reg.sv"
