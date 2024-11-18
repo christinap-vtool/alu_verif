@@ -1,4 +1,3 @@
-//interface apb_signals ();
 interface interfc ();
 
    logic[`ADDR_W:0] paddr;

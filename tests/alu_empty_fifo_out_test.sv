@@ -1,6 +1,6 @@
 //This test exams the occation that a user requests to read a result without having given operants.
 //The master tries to read a result from the Result register, but FIFO_OUT is empty.
-//This action will cause a slave error response. the occation.
+//This action will cause a slave error response.
 
 class alu_empty_fifo_out_test extends alu_testbase;
    `uvm_component_utils(alu_empty_fifo_out_test)

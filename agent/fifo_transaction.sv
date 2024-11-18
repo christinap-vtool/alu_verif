@@ -1,6 +1,3 @@
-//fifo transaction
-
-//maybe that should be change to apb transaction
 class fifo_transaction extends uvm_sequence_item;
 
 

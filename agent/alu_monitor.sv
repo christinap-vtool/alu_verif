@@ -2,7 +2,7 @@ class alu_monitor extends uvm_monitor;
    `uvm_component_utils(alu_monitor)
    virtual interfc vintf;
    apb_transaction  tr_item;
-   fifo_config fifo_conf; 
+   fifo_config fifo_conf;
 
    //port
    uvm_analysis_port #(apb_transaction) ap_monitor;
@@ -49,7 +49,7 @@ class alu_monitor extends uvm_monitor;
    endtask
 
    task wr_rd_task();
-      forever 
+      forever
       begin
          wait (vintf.psel==1 && vintf.penable==1 && vintf.ready ==1);
          @(negedge vintf.clk);

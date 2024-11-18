@@ -7,7 +7,6 @@ class alu_env extends uvm_env;
    reg_block   m_ral_model; //register model
    adapter   m_apb_adapter; //convert reg tx <-> bus type packets
    uvm_reg_predictor #(apb_transaction)  m_apb_predictor;   //map apb tx to register in model
-   //apb_predictor   m_apb_predictor;   //map apb tx to register in model
 
    alu_env_config  env_cfg;
 

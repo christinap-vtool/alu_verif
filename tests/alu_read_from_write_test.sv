@@ -1,3 +1,5 @@
+//This test exams the occation that a user tries to read from a Write Only register.
+//This action will cause a slave error response.
 class alu_read_from_write_test extends alu_testbase;
    `uvm_component_utils(alu_read_from_write_test)
 

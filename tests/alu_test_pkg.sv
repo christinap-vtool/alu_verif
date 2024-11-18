@@ -3,8 +3,6 @@
 
 package alu_test_pkg;
 
-
-
 `include "uvm_macros.svh"
 
 import uvm_pkg::*;
@@ -23,8 +21,6 @@ import alu_pkg::*;
 `include "alu_full_fifo_in_test.sv"
 `include "alu_reset_test.sv"
 `include "apb_address_test.sv"
-
-
 
 
 

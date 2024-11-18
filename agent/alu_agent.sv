@@ -1,14 +1,13 @@
-//agent
 class alu_agent extends uvm_agent;
    `uvm_component_utils (alu_agent)
-   //create handles to all agent components like driver monit etc
+   //create handles to all agent components like driver monitor etc
 
    fifo_config    conf;
-   alu_driver    driver;
+   alu_driver     driver;
    alu_monitor    monitor;
    fifo_sequencer sequencer;
    adapter        m_adapter;
-      
+
    function new(string name, uvm_component parent);
       super.new(name,parent);
    endfunction

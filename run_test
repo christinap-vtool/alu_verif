@@ -1,1 +1,1 @@
-xrun  -timescale 1ns/1ns -sysv -access +rw -uvm -gui -coverage ALL -seed RANDOM -f compile_files.f -uvmhome CDNS-1.2 +UVM_TESTNAME=apb_address_test -clean -l test.log top_tb.sv +DUMPNAME="test.vcd" +UVM_VERBOSITY=UVM_HIGH
+xrun  -timescale 1ns/1ns -sysv -access +rw -uvm -gui  -covoverwrite -coverage ALL -dutinst top_tb/dut/alu_top_module -seed RANDOM -f compile_files.f -uvmhome CDNS-1.2 +UVM_TESTNAME=apb_address_test -clean -l test.log top_tb.sv +DUMPNAME="test.vcd"  +UVM_VERBOSITY=UVM_LOW

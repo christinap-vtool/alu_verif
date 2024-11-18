@@ -45,10 +45,10 @@ class alu_driver extends uvm_driver #(apb_transaction);
       `uvm_info(get_name(), "hello i'm inside init_signal task", UVM_DEBUG)
 
       `uvm_info(get_name(), "initialiazation of signals. Let's start", UVM_HIGH)
-      vintf.paddr <= 0;
-      vintf.pwdata <= 0;
-      vintf.pwrite <= 0;
-      vintf.psel <= 0;
+      vintf.paddr   <= 0;
+      vintf.pwdata  <= 0;
+      vintf.pwrite  <= 0;
+      vintf.psel    <= 0;
       vintf.penable <= 0;
    endtask
 
@@ -71,8 +71,8 @@ class alu_driver extends uvm_driver #(apb_transaction);
       endtask //do_drive
 
    task write_data();
-      vintf.psel <= 1;
-      vintf.paddr <= data_obj.addr;
+      vintf.psel   <= 1;
+      vintf.paddr   <= data_obj.addr;
       vintf.pwdata <= data_obj.data;
       vintf.pwrite <= 1;
       `uvm_info(get_name(), "write task before vintf.clk", UVM_DEBUG)
@@ -101,15 +101,14 @@ class alu_driver extends uvm_driver #(apb_transaction);
    endtask
 
    task read_data();
-      vintf.psel <= 1;
-      vintf.paddr <= data_obj.addr;
+      vintf.psel   <= 1;
+      vintf.paddr  <= data_obj.addr;
       vintf.pwrite <= 0;
 
       @(posedge vintf.clk);
       vintf.penable <= 1;
       `uvm_info(get_name(), "read task after vintf.clk", UVM_DEBUG)
       `uvm_info("DRIVER", $sformatf("vintf.ready:%0d ",vintf.ready), UVM_NONE)
-
 
        if (vintf.ready == 0) begin
          `uvm_info(get_name(), "inside vintf.ready if", UVM_DEBUG)
@@ -120,7 +119,7 @@ class alu_driver extends uvm_driver #(apb_transaction);
          @(posedge vintf.clk);
       end
 
-      `uvm_info(get_name(), "read  task after vintf.ready", UVM_DEBUG) 
+      `uvm_info(get_name(), "read  task after vintf.ready", UVM_DEBUG)
       vintf.psel=0;
       vintf.penable <= 0;
       `uvm_info("DRIVER", $sformatf("vintf.prdata: %0h ",vintf.prdata), UVM_NONE)

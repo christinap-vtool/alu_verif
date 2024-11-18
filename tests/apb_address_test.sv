@@ -1,8 +1,9 @@
+//This test exams the occation that the address provided by the master is bigger than 4 (3?b100).
+//The available addresses are as many as the registers : 0 - (REG_NUMBER - 1) = (0,1,2,3,4).
 class apb_address_test extends alu_testbase;
    `uvm_component_utils(apb_address_test)
    rand int num_of_trans;
    apb_write_read_sequence seq_addr;
-
 
    function new(string name="apb_address_test", uvm_component parent);
       super.new(name,parent);

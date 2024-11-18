@@ -1,4 +1,3 @@
-//class reg2apb_adapter extends uvm_reg_adapter;
 class adapter extends uvm_reg_adapter;
 
    `uvm_object_utils (adapter)

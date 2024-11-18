@@ -7,14 +7,10 @@ class alu_reset_test extends alu_testbase;
 
    alu_reset_seq seq1;
 
-
-   //alu_env env;
    reg_block   m_ral_model; //register model
 
    function void build_phase(uvm_phase phase);
       super.build_phase(phase); 
-
-
       seq1 = alu_reset_seq::type_id::create("seq1");
 
    endfunction
@@ -31,7 +27,7 @@ class alu_reset_test extends alu_testbase;
       seq1.start(env.fifo_vr_sqr);
 
       #100ns;
-      phase.drop_objection(this); //without the phase. before syntax i had an error and so for raising objection
+      phase.drop_objection(this);
 
    endtask
 endclass

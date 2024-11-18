@@ -65,6 +65,11 @@ class control_reg extends uvm_reg;
          .individually_accessible(1)
       );
 
+      add_hdl_path_slice(.name("start_bit"), .offset(0), .size(1));
+      add_hdl_path_slice(.name("op_out"), .offset(1), .size(2));
+      add_hdl_path_slice(.name("id_out"), .offset(8), .size(8));
+
+
    endfunction
 
 
@@ -93,6 +98,8 @@ class data0_reg extends uvm_reg;
          .individually_accessible(1)
 
       );
+      //for back-door access
+      add_hdl_path_slice(.name("data_0_out"), .offset(0), .size(16));
 
    endfunction
 
@@ -120,6 +127,9 @@ class data1_reg extends uvm_reg;
       .is_rand(1),
       .individually_accessible(1)
       );
+      //for back-door access
+      add_hdl_path_slice(.name("data_1_out"), .offset(0), .size(16));
+
    endfunction
 
 
@@ -184,10 +194,6 @@ endclass
 
 
 
-
-
-
-
 // class reg_block extends uvm_reg_block;
 //     `uvm_component_utils(reg_block)
 
@@ -247,12 +253,12 @@ class reg_block extends uvm_reg_block;
    `uvm_object_utils(reg_block)
 
    rand control_reg   m_control_reg;
-   rand data0_reg     m_data0_reg;   
+   rand data0_reg     m_data0_reg;
    rand data1_reg     m_data1_reg;
    rand result_reg    m_result_reg;
    rand monitor_reg   m_monitor_reg;
    //tododeclare the map
-   uvm_reg_map         reg_map;      
+   uvm_reg_map         reg_map;
 
    function new(string name ="reg_block");
       super.new(.name(name), .has_coverage(UVM_NO_COVERAGE));
@@ -289,8 +295,12 @@ class reg_block extends uvm_reg_block;
       reg_map.add_reg (m_result_reg, `UVM_REG_ADDR_WIDTH'h3, "RO", 0);
       reg_map.add_reg (m_monitor_reg, `UVM_REG_ADDR_WIDTH'h4, "RO", 0);
 
-      //todo check the following --> lock and autopredict
+
       //default_map.set_auto_predict(1);
+
+      //backdoor access
+      add_hdl_path( .path("top_tb.dut.csr_inst.cs_regs"));
+
       default_map.set_check_on_read(0);
       lock_model();
 

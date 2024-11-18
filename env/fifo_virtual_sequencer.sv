@@ -1,7 +1,6 @@
 class fifo_virtual_sequencer extends uvm_sequencer;
    `uvm_component_utils (fifo_virtual_sequencer)
-   //fifo_sequencer write_seqr;
-   //fifo_sequencer read_seqr;
+
    fifo_sequencer apb_seqr;
    virtual interfc vintf;
    function new(string name = "fifo_virtual_sequencer", uvm_component parent);
