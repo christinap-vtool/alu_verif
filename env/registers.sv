@@ -56,7 +56,6 @@ class control_reg extends uvm_reg;
 
     endfunction
 
-    
 endclass
 
 class data0_reg extends uvm_reg;
@@ -84,7 +83,6 @@ class data0_reg extends uvm_reg;
         );
 
     endfunction
-
 
 endclass
 
@@ -142,7 +140,6 @@ class result_reg extends uvm_reg;
         );
 
     endfunction
-
 
 endclass
 

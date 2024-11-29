@@ -31,7 +31,7 @@ class alu_base_test extends alu_testbase;
       seq.start(env.fifo_vr_sqr);
 
       #100ns;
-      phase.drop_objection(this); //without the phase. before syntax i had an error and so for raising objection
+      phase.drop_objection(this);
 
    endtask
 endclass

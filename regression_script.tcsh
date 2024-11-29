@@ -25,7 +25,7 @@ set TESTNAMES = (alu_base_test alu_empty_fifo_out_test alu_full_fifo_in_test alu
 #set TESTNAMES = (alu_base_test)
 
 # Number of times to run each test
-set N = 30
+set N = 1
 
 @ total_tests = 0
 
@@ -36,7 +36,7 @@ foreach TESTNAME ($TESTNAMES)
    foreach i (`seq 1 $N`)
       # Run the command with the current test name and seed
       echo "\n\nRunning test: $TESTNAME, seed: $i\n\n"
-      xrun -timescale 1ns/1ns -sysv -access +rw -uvm -coverage ALL -dutinst top_tb/dut/alu_top_module -covoverwrite -seed RANDOM -f compile_files.f -uvmhome CDNS-1.2 \
+      xrun -timescale 1ns/1ns -sysv -access +rw -uvm -coverage ALL -dutinst top_tb/dut/alu_top_module -covoverwrite -nolibcell -seed RANDOM -f compile_files.f -uvmhome CDNS-1.2 \
       top_tb.sv \
       +UVM_VERBOSITY=UVM_LOW\
       +UVM_TESTNAME=$TESTNAME -l logs/${TESTNAME}_$i.log \

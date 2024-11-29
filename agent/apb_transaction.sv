@@ -1,8 +1,6 @@
-
 //maybe that should be change to apb transaction
 class apb_transaction extends uvm_sequence_item;
    `uvm_object_utils(apb_transaction)
-
 
    rand wr_rd_type              op; //indicates whether the transfer is read or write
    rand logic                   write;

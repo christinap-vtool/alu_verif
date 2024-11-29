@@ -4,7 +4,7 @@ class alu_env extends uvm_env;
    alu_agent agent;
    alu_scoreboard scbd;
    fifo_virtual_sequencer fifo_vr_sqr;
-   reg_block   m_ral_model; //register model
+   reg_block   m_ral_model;
    adapter   m_apb_adapter; //convert reg tx <-> bus type packets
    uvm_reg_predictor #(apb_transaction)  m_apb_predictor;   //map apb tx to register in model
 
@@ -43,7 +43,7 @@ class alu_env extends uvm_env;
 
       fifo_vr_sqr.apb_seqr = agent.sequencer;
 
-      //connect analysis ports from agent to the .scoreboard
+      //connect analysis ports from agent to the scoreboard
 
       m_apb_predictor.map = m_ral_model.reg_map;
 

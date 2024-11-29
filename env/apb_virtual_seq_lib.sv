@@ -20,7 +20,6 @@ class apb_write_read_sequence extends uvm_sequence#(apb_transaction);
    `uvm_object_utils(apb_write_read_sequence)
    `uvm_declare_p_sequencer(fifo_sequencer)
 
-
    rand bit [`APB_BUS_SIZE-1 : 0] mdata;
    rand bit [`ADDR_W :0] maddr;
    rand wr_rd_type operation;
@@ -36,7 +35,6 @@ class apb_write_read_sequence extends uvm_sequence#(apb_transaction);
       `uvm_info(get_name,$sformatf("i'm in the body"), UVM_DEBUG)
       req = apb_transaction::type_id::create("req");
       `uvm_info(get_name,$sformatf("after start_item"), UVM_DEBUG)
-
 
       if ( !req.randomize() with {
          addr      == maddr;
@@ -82,9 +80,11 @@ class apb_seq extends base_seq;
    constraint id_c {unique {id}; id>0;}
 
    constraint operation_c {operation dist {0:/5, 1:/45, 2:/45, 3:/5};}
+  
 
-
-   //constraint start_bit_c {start_bit == 1;}
+   constraint start_bit_c {start_bit == 1;}
+   constraint data0_c {data0 dist {0:/10, 1:/10, [2:$]:/80};}
+   constraint data1_c {data1 dist {0:/10, 1:/10, [2:$]:/80};}
 
    constraint wr_trans_c{soft wr_trans>0; soft wr_trans<4;}
 
@@ -314,7 +314,7 @@ class alu_reset_seq extends base_seq;
 
    rand int wr_trans;
    rand int wr_trans_after_reset;
-   rand bit random_reset; //trigger a reset random;y
+   rand bit random_reset; //trigger a reset randomly
    int counter;
 
    constraint id_c {unique {id}; id>0;}
@@ -381,8 +381,6 @@ class alu_reset_seq extends base_seq;
                #600ns;
                m_ral_model.m_control_reg.write(status,control);
 
-               // #800ns;
-               // #600ns;
                #800ns;
                `uvm_info(get_name(), " reset de-asserted:!", UVM_NONE)
 
@@ -424,7 +422,6 @@ class alu_fifo_in_full_seq extends base_seq;
    reg_block   m_ral_model; //register model
    uvm_status_e status;
    apb_transaction data_obj;
-   //uvm_reg_data_t   ref_data;   //this is for the desire value  todo delete
 
    bit[24:0]  rdata;   //here will be saved the data that will be read from data0
 
@@ -479,7 +476,6 @@ class alu_fifo_in_full_seq extends base_seq;
       end
       `uvm_info("seq", $sformatf("size of queue:%0d  ",id_queue.size()), UVM_NONE)
 
-      //todo: here i will read the monitor register and should be empty
       m_ral_model.m_monitor_reg.read(status,rdata);
       `uvm_info("seq", $sformatf("monitor bit:%0d ",rdata), UVM_NONE);
       `uvm_info(get_name(), " seq after monitor", UVM_NONE)
@@ -509,7 +505,6 @@ class alu_fifo_in_full_seq extends base_seq;
          //here the register control will be written
          `uvm_info("seq", $sformatf("data to be sent:%0h ",data0), UVM_NONE)
 
-
          control[0] = start_bit;
          control[2:1] = operation;
          //control[15:8] =id;
@@ -536,8 +531,9 @@ class alu_fifo_in_full_seq extends base_seq;
       end
       repeat(rd_trans) begin
          #1000ns;
-         `uvm_info("seq", $sformatf("result:%0d ",rdata), UVM_NONE);
          m_ral_model.m_result_reg.read(status, rdata);
+         `uvm_info("seq", $sformatf("result:%0d ",rdata), UVM_NONE);
+
       end
 
       data_obj.print();

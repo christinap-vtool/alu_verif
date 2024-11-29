@@ -194,61 +194,6 @@ endclass
 
 
 
-// class reg_block extends uvm_reg_block;
-//     `uvm_component_utils(reg_block)
-
-//     rand control_reg   m_control_reg;
-//     rand data0_reg     m_data0_reg;   
-//     rand data1_reg     m_data1_reg;
-//     rand result_reg    m_result_reg;
-//     rand monitor_reg   m_monitor_reg;
-//     //tododeclare the map
-//     uvm_reg_map        
-
-//     function new(string name ="reg_block");
-//         super.new(name, UVM_NO_COVERAGE);
-//     endfunction
-
-//     virtual function void build();
-//         //create an instance for every register 
-//         this.default_map = create_map("", 0, 4, UVM_LITTLE_ENDIAN, 0);   //TODO CHECK WHAT IS THIS???
-//         this.m_control_reg = control_reg::type_id::create ("m_control_reg", , get_full_name());
-//         this.m_data0_reg = data0_reg::type_id::create ("m_data0_reg", , get_full_name());
-//         this.m_data1_reg = data1_reg::type_id::create ("m_data1_reg", , get_full_name());
-//         this.m_result_reg = result_reg::type_id::create ("m_result_reg", , get_full_name());
-//         this.m_monitor_reg = monitor_reg::type_id::create ("m_monitor_reg", , get_full_name());
-
-//         //configure every register instance
-//         this.m_control_reg.configure (this, null, "");
-//         this.m_data0_reg.configure (this, null, "");
-//         this.m_data1_reg.configure (this, null, "");
-//         this.m_result_reg.configure (this, null, "");
-//         this.m_monitor_reg.configure (this, null, "");
-
-//         //call the build() function to build all register fields within each register
-//         this.m_control_reg.build();
-//         this.m_data0_reg.build();
-//         this.m_data1_reg.build();
-//         this.m_result_reg.build();
-//         this.m_monitor_reg.build();
-
-//         //add these registers to the default map
-//         this.default_map.add_reg (this.m_control_reg, `UVM_REG_ADDR_WIDTH'h0, "WO", 0);
-//         this.default_map.add_reg (this.m_data0_reg, `UVM_REG_ADDR_WIDTH'h1, "WO", 0);
-//         this.default_map.add_reg (this.m_data1_reg, `UVM_REG_ADDR_WIDTH'h2, "WO", 0);
-//         this.default_map.add_reg (this.m_result_reg, `UVM_REG_ADDR_WIDTH'h3, "RO", 0);
-//         this.default_map.add_reg (this.m_monitor_reg, `UVM_REG_ADDR_WIDTH'h4, "RO", 0);
-
-//         //todo check the following --> lock and autopredict
-//         default_map.set_auto_predict(1);
-//         lock_model();
-
-
-//     endfunction
-// endclass
-
-
-
 class reg_block extends uvm_reg_block;
    `uvm_object_utils(reg_block)
 
@@ -257,7 +202,7 @@ class reg_block extends uvm_reg_block;
    rand data1_reg     m_data1_reg;
    rand result_reg    m_result_reg;
    rand monitor_reg   m_monitor_reg;
-   //tododeclare the map
+
    uvm_reg_map         reg_map;
 
    function new(string name ="reg_block");

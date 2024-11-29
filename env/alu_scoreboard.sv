@@ -14,7 +14,7 @@ class alu_scoreboard extends uvm_scoreboard;
    bit[`DATA_SIZE-1:0] first_operand;
    bit[(`DATA_SIZE-1):0] second_operand;
    bit[16:0] result;  //16:0 and not 15:0 because of the carry out
-   bit[24:0] actual_result; //Be carefull result will be  the actual_result+carry+id
+   bit[24:0] actual_result; //result will be the actual_result+carry+id
 
    bit[(`MUL_DATA_SIZE-1):0] first_operand_mul;   //we have to use only the half least significant bits
    bit[(`MUL_DATA_SIZE-1):0] second_operand_mul;  //we have to use only the half least significant bits
@@ -81,6 +81,8 @@ class alu_scoreboard extends uvm_scoreboard;
                wait(vintf.psel ==1 && vintf.penable==1 && vintf.pwrite == 1);
                #1ns
                if(vintf.ready == 1) begin
+                  cvg_obj.checker_t = apb_write;
+                  cvg_obj.checker_cg.sample();
                   `uvm_info("SCBD", $sformatf("Writing of data via APB doesn't include any wait states and it happens immediately."), UVM_NONE)
                end
                else
@@ -96,6 +98,8 @@ class alu_scoreboard extends uvm_scoreboard;
 
                #1ns
                if(vintf.ready == 1) begin
+                  cvg_obj.checker_t = apb_read_monitor;
+                  cvg_obj.checker_cg.sample();
                   `uvm_info("SCBD", $sformatf("The read transfer in this design includes no wait states when reading from the Monitor register (address 0x4)"), UVM_NONE)
                end
                else
@@ -115,13 +119,18 @@ class alu_scoreboard extends uvm_scoreboard;
                      `uvm_info("SCBD", $sformatf("That's normal.Reading includes one wait state."), UVM_NONE)
                   @(posedge vintf.clk);
                   #1ns
-                  if(vintf.ready==1)
+                  if(vintf.ready==1)begin
+                     cvg_obj.checker_t = apb_read_no_slav_err;
+                     cvg_obj.checker_cg.sample();
                      `uvm_info("SCBD", $sformatf("Expected. Reading includes one wait state."), UVM_NONE)
+                  end
                   else
                      `uvm_error(get_type_name (), $sformatf("The reading didn't happen immediately after one clock cycle"))
                end
                else begin
                   if(vintf.ready == 1) begin
+                     cvg_obj.checker_t = apb_read_slv_err;
+                     cvg_obj.checker_cg.sample();
                      `uvm_info("SCBD", $sformatf("Reading and slave error -> No wait state."), UVM_NONE)
                   end
                   else
@@ -149,7 +158,6 @@ class alu_scoreboard extends uvm_scoreboard;
          cvg_obj.slv_err = pkt.slv_err;
          cause_of_slave_error(pkt);
       end //pkt.slv_err == 1)
-
       else begin
 
          case (pkt.addr)
@@ -160,15 +168,14 @@ class alu_scoreboard extends uvm_scoreboard;
                start_bit = control[0];
                `uvm_info("SCBD", $sformatf("id = 0x%0h", data_to_be_written[9:2]), UVM_NONE)
                if(control[0] ==1) begin
-
-                  if(cnt_fifo_in >= `FIFO_IN_DEPTH)
-                     cvg_obj.full_fifo_in =1;
-
-                  if(cnt_fifo_in < `FIFO_IN_DEPTH)
-                     cnt_fifo_in = cnt_fifo_in + 1;
                   if(cnt_fifo_out < `FIFO_OUT_DEPTH)
                      cnt_fifo_out = cnt_fifo_out + 1;
-
+                  else begin
+                     if(cnt_fifo_in < `FIFO_IN_DEPTH)
+                        cnt_fifo_in = cnt_fifo_in + 1;
+                     if(cnt_fifo_in == `FIFO_IN_DEPTH)
+                        cvg_obj.full_fifo_in =1;
+                  end
                end
 
                `uvm_info("SCBD", $sformatf("cnt_fifo_in = %0d ",cnt_fifo_in), UVM_NONE);
@@ -180,20 +187,28 @@ class alu_scoreboard extends uvm_scoreboard;
             2'b01 : begin
                data_to_be_written[25:10] = pkt.data;
                cvg_obj.wr_rd =1;
+               cvg_obj.data0 = pkt.data;
+               cvg_obj.data0_cg.sample();
             end
             2'b10: begin
                data_to_be_written[41:26] = pkt.data;
                cvg_obj.wr_rd =1;
+               cvg_obj.data1 = pkt.data;
+               cvg_obj.data1_cg.sample();
+
             end
             2'b11: begin
                comparison_expected_actual_pkt(pkt);
 
                if(cnt_fifo_in > 0)
                   cnt_fifo_in = cnt_fifo_in - 1;
-               if(cnt_fifo_in == 0)
+               else if(cnt_fifo_in == 0 && cnt_fifo_out > 0)
                   cnt_fifo_out = cnt_fifo_out - 1;
                `uvm_info("SCBD", $sformatf("cnt_fifo_out = %0d ",cnt_fifo_out), UVM_NONE)
                cvg_obj.wr_rd =0;
+               cvg_obj.result_reg = pkt.data;
+               cvg_obj.result_reg_cg.sample();
+
             end
             3'b100: begin
                monitor_full_out = pkt.data;
@@ -242,6 +257,8 @@ class alu_scoreboard extends uvm_scoreboard;
                   result = first_operand + second_operand;
                   `uvm_info("SCBD", $sformatf("result of addition = :0x%0h ",result), UVM_NONE)
                   cvg_obj.operation = addition;
+                  if((first_operand == 0) || (second_operand ==0))
+                     cvg_obj.identity_element_for_addition = 1;
                end
                2'b10: begin
                   //mulpiplication
@@ -264,6 +281,8 @@ class alu_scoreboard extends uvm_scoreboard;
                   `uvm_info("SCBD", $sformatf("result of multiplication = :0x%0h ",result), UVM_NONE)
 
                   cvg_obj.operation = multiplication;
+                  if((first_operand_mul == 1) || (second_operand_mul == 1))
+                     cvg_obj.identity_element_for_multiplication = 1;
                   //`uvm_info("SCBD", $sformatf("actual result of multiplication = :0x%0h ",actual_result), UVM_NONE); 
                end
                default: begin
@@ -358,7 +377,7 @@ function void alu_scoreboard::cause_of_slave_error(apb_transaction pkt);
       `uvm_info("SCBD", $sformatf("The operation bits of ctrl_data are neither 2?b10 nor 2?b01. op=%d", operation_bit), UVM_NONE)
       cvg_obj.slv_err =false_operation;
    end
-   else if((pkt.addr!=control_reg_addr) || (pkt.addr!=data_0_reg_addr ) || (pkt.addr != data_1_reg_addr) || (pkt.addr != result_reg_addr) || (pkt.addr != monitor_reg_addr)) begin
+   else if((pkt.addr!=control_reg_addr) && (pkt.addr!=data_0_reg_addr ) && (pkt.addr != data_1_reg_addr) && (pkt.addr != result_reg_addr) && (pkt.addr != monitor_reg_addr)) begin
       `uvm_info("SCBD", $sformatf("The address provided by the master is bigger than 4"), UVM_NONE)
       cvg_obj.slv_err =no_available_addr;
    end
@@ -377,6 +396,8 @@ function void alu_scoreboard::comparison_expected_actual_pkt(apb_transaction pkt
    if(array_results.exists (id_from_dut)) begin
       if(array_results[id_from_dut] == result_from_dut) begin
          `uvm_info("SCBD", $sformatf("comparison was succesful"), UVM_NONE);
+         cvg_obj.checker_t = comparison_succesful;
+         cvg_obj.checker_cg.sample();
       end
       else begin
          `uvm_error(get_type_name (), $sformatf("Mismatch. Data from dut =0x%0h data drom ral =0x%0h",result_from_dut, array_results[id_from_dut]))

@@ -9,8 +9,6 @@ class alu_write_to_read_reg extends alu_testbase;
    endfunction
 
    write_to_read_reg seq1;
-
-
    reg_block   m_ral_model; //register model
 
    function void build_phase(uvm_phase phase);
